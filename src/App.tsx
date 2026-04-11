@@ -86,6 +86,7 @@ const ShadowingInternal = ({ script, tips, onNext }: { script: string, tips?: st
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop text-center">
       <div className="space-y-2">
+        {/* オレンジ背景・白線でオーバーラッピングと統一 */}
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md">
           <Headphones size={32} />
         </div>
@@ -122,7 +123,7 @@ export default function App() {
     return () => { audio.pause(); stopSpeech(); };
   }, []);
 
-  // エピソード完了時の効果音
+  // エピソード完了時の効果音 (finish.mp3)
   useEffect(() => {
     if (currentStep === 'result') {
       const finishAudio = new Audio('/finish.mp3');
@@ -150,6 +151,7 @@ export default function App() {
 
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
+          {/* メインメニュー：画像のデザインを忠実に再現 */}
           {currentStep === 'menu' && (
             <div className="space-y-6 animate-in fade-in duration-700">
               <div className="text-center py-10 bg-orange-50 rounded-[40px] border-4 border-orange-100 shadow-inner">
@@ -157,7 +159,7 @@ export default function App() {
                 <div className="space-y-1">
                   <p className="text-2xl md:text-3xl font-black text-orange-600">Lesson 1</p>
                   <h2 className="text-4xl md:text-5xl font-black text-orange-700 leading-tight">
-                    {courseData.course_title}
+                    How Can We Become Stronger?
                   </h2>
                 </div>
               </div>
