@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Home, Play, CheckCircle, BookOpen, Volume2, Square, Mic, Headphones, BookOpenCheck } from 'lucide-react';
 import { ListeningStep } from './components/ListeningStep';
 import { QuizStep } from './components/QuizStep';
+import { VocabularyStep } from './components/VocabularyStep'; // 新規追加
 import { DictationStep } from './components/DictationStep';
 import { ReadingStep } from './components/ReadingStep';
 import { courseData, Episode, KeyPhrase } from './data/episodes';
@@ -86,7 +87,6 @@ const ShadowingInternal = ({ script, tips, onNext }: { script: string, tips?: st
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop text-center">
       <div className="space-y-2">
-        {/* オレンジ背景・白線でオーバーラッピングと統一 */}
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md">
           <Headphones size={32} />
         </div>
@@ -101,7 +101,7 @@ const ShadowingInternal = ({ script, tips, onNext }: { script: string, tips?: st
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState<'menu' | 'listening' | 'quiz' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('menu');
+  const [currentStep, setCurrentStep] = useState<'menu' | 'listening' | 'quiz' | 'vocabulary' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('menu');
   const [selectedEpisode, setSelectedEpisode] = useState<Episode>(courseData.episodes[0]);
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
   const bgmRef = useRef<HTMLAudioElement | null>(null);
@@ -123,7 +123,7 @@ export default function App() {
     return () => { audio.pause(); stopSpeech(); };
   }, []);
 
-  // エピソード完了時の効果音 (finish.mp3)
+  // エピソード完了時の効果音
   useEffect(() => {
     if (currentStep === 'result') {
       const finishAudio = new Audio('/finish.mp3');
@@ -143,15 +143,14 @@ export default function App() {
 
       {currentStep !== 'menu' && currentStep !== 'result' && (
         <nav className="bg-white border-b-2 border-slate-100 flex justify-center overflow-x-auto px-4">
-          {(['listening', 'quiz', 'phrases', 'dictation', 'reading', 'overlapping', 'shadowing'] as const).map((step) => (
-            <button key={step} onClick={() => { stopSpeech(); setCurrentStep(step); }} className={`py-3 px-6 text-[10px] font-black uppercase tracking-widest border-b-4 ${currentStep === step ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-400'}`}>{step}</button>
+          {(['listening', 'quiz', 'vocabulary', 'phrases', 'dictation', 'reading', 'overlapping', 'shadowing'] as const).map((step) => (
+            <button key={step} onClick={() => { stopSpeech(); setCurrentStep(step); }} className={`py-3 px-4 text-[9px] font-black uppercase tracking-widest border-b-4 ${currentStep === step ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-400'}`}>{step}</button>
           ))}
         </nav>
       )}
 
       <main className="flex-1 p-6">
         <div className="max-w-4xl mx-auto">
-          {/* メインメニュー：画像のデザインを忠実に再現 */}
           {currentStep === 'menu' && (
             <div className="space-y-6 animate-in fade-in duration-700">
               <div className="text-center py-10 bg-orange-50 rounded-[40px] border-4 border-orange-100 shadow-inner">
@@ -159,7 +158,7 @@ export default function App() {
                 <div className="space-y-1">
                   <p className="text-2xl md:text-3xl font-black text-orange-600">Lesson 1</p>
                   <h2 className="text-4xl md:text-5xl font-black text-orange-700 leading-tight">
-                    How Can We Become Stronger?
+                    {courseData.course_title}
                   </h2>
                 </div>
               </div>
@@ -178,7 +177,11 @@ export default function App() {
           )}
 
           {currentStep === 'listening' && <ListeningStep script={selectedEpisode.script} onNext={() => { stopSpeech(); setCurrentStep('quiz'); }} />}
-          {currentStep === 'quiz' && <QuizStep quizzes={selectedEpisode.quizzes} onNext={() => { stopSpeech(); setCurrentStep('phrases'); }} />}
+          {currentStep === 'quiz' && <QuizStep quizzes={selectedEpisode.quizzes} onNext={() => { stopSpeech(); setCurrentStep('vocabulary'); }} />}
+          
+          {/* 新機能: Vocabulary Check */}
+          {currentStep === 'vocabulary' && <VocabularyStep questions={selectedEpisode.vocab_quizzes} onNext={() => { stopSpeech(); setCurrentStep('phrases'); }} />}
+          
           {currentStep === 'phrases' && <KeyPhrasesInternal items={selectedEpisode.key_phrases} onNext={() => { stopSpeech(); setCurrentStep('dictation'); }} />}
           {currentStep === 'dictation' && <DictationStep script={selectedEpisode.script} items={selectedEpisode.dictation_items} onNext={() => { stopSpeech(); setCurrentStep('reading'); }} />}
           {currentStep === 'reading' && (
