@@ -105,7 +105,6 @@ export default function App() {
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
   const bgmRef = useRef<HTMLAudioElement | null>(null);
 
-  // フォントとBGMの初期化
   useEffect(() => {
     const link = document.createElement('link');
     link.href = 'https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500;900&display=swap';
@@ -123,12 +122,12 @@ export default function App() {
     return () => { audio.pause(); stopSpeech(); };
   }, []);
 
-  // エピソード完了時の効果音再生
+  // エピソード完了時の効果音
   useEffect(() => {
     if (currentStep === 'result') {
       const finishAudio = new Audio('/finish.mp3');
       finishAudio.volume = 0.5;
-      finishAudio.play().catch(err => console.log("Audio play failed:", err));
+      finishAudio.play().catch(() => {});
     }
   }, [currentStep]);
 
@@ -137,20 +136,14 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-pop">
       <header className="bg-white sticky top-0 z-50 border-b-4 border-slate-100 px-6 py-4 flex justify-between items-center shadow-sm">
-        <button onClick={() => { stopSpeech(); setCurrentStep('menu'); }} className="p-2 bg-slate-100 hover:bg-orange-100 rounded-xl text-slate-800">
-          <Home size={22} />
-        </button>
-        <button onClick={toggleBgm} className={`px-4 py-2 rounded-xl border-2 font-bold text-sm ${isBgmPlaying ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-slate-600 border-slate-200'}`}>
-          {isBgmPlaying ? 'BGM ON' : 'BGM OFF'}
-        </button>
+        <button onClick={() => { stopSpeech(); setCurrentStep('menu'); }} className="p-2 bg-slate-100 hover:bg-orange-100 rounded-xl text-slate-800"><Home size={22} /></button>
+        <button onClick={toggleBgm} className={`px-4 py-2 rounded-xl border-2 font-bold text-sm ${isBgmPlaying ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-slate-600 border-slate-200'}`}>{isBgmPlaying ? 'BGM ON' : 'BGM OFF'}</button>
       </header>
 
       {currentStep !== 'menu' && currentStep !== 'result' && (
         <nav className="bg-white border-b-2 border-slate-100 flex justify-center overflow-x-auto px-4">
           {(['listening', 'quiz', 'phrases', 'dictation', 'reading', 'overlapping', 'shadowing'] as const).map((step) => (
-            <button key={step} onClick={() => { stopSpeech(); setCurrentStep(step); }} className={`py-3 px-6 text-[10px] font-black uppercase tracking-widest border-b-4 ${currentStep === step ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-400'}`}>
-              {step}
-            </button>
+            <button key={step} onClick={() => { stopSpeech(); setCurrentStep(step); }} className={`py-3 px-6 text-[10px] font-black uppercase tracking-widest border-b-4 ${currentStep === step ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-400'}`}>{step}</button>
           ))}
         </nav>
       )}
@@ -161,17 +154,19 @@ export default function App() {
             <div className="space-y-6 animate-in fade-in duration-700">
               <div className="text-center py-10 bg-orange-50 rounded-[40px] border-4 border-orange-100 shadow-inner">
                 <h1 className="text-sm font-black text-orange-400 uppercase tracking-[0.3em] mb-2">English Learning Story</h1>
-                <h2 className="text-4xl md:text-5xl font-black text-orange-700 leading-tight">Melody of Youth<br /><span className="text-2xl md:text-3xl text-orange-600">Kaito’s High School Days</span></h2>
+                <div className="space-y-1">
+                  <p className="text-2xl md:text-3xl font-black text-orange-600">Lesson 1</p>
+                  <h2 className="text-4xl md:text-5xl font-black text-orange-700 leading-tight">
+                    {courseData.course_title}
+                  </h2>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {courseData.episodes.map((ep) => (
                   <div key={ep.id} onClick={() => { stopSpeech(); setSelectedEpisode(ep); setCurrentStep('listening'); }} className="bg-white rounded-[24px] p-5 border-4 border-transparent hover:border-orange-400 cursor-pointer flex items-center justify-between group shadow-sm hover:shadow-xl transition-all">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black">{ep.id}</div>
-                      <div>
-                        <h3 className="text-lg font-bold group-hover:text-orange-600">{ep.title}</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Episode {ep.id}</p>
-                      </div>
+                      <div><h3 className="text-lg font-bold group-hover:text-orange-600">{ep.title}</h3><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Episode {ep.id}</p></div>
                     </div>
                     <Play className="text-slate-300 group-hover:text-orange-600" size={20} />
                   </div>
@@ -197,8 +192,7 @@ export default function App() {
           {currentStep === 'result' && (
             <div className="max-w-md mx-auto text-center space-y-6 py-12 animate-in zoom-in duration-500">
               <CheckCircle size={80} className="text-green-500 mx-auto" />
-              <h2 className="text-4xl font-black text-slate-800">Chapter Cleared!</h2>
-              <p className="text-slate-500 font-bold">Great job completing the episode!</p>
+              <h2 className="text-4xl font-black text-slate-800">Lesson Cleared!</h2>
               <button onClick={() => setCurrentStep('menu')} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-700 transition-all">Back to Story List</button>
             </div>
           )}
