@@ -24,7 +24,7 @@ export type Episode = {
   slash_script?: string;
   japanese_translation?: string;
   quizzes: QuizQuestion[];
-  vocab_quizzes: VocabQuestion[]; // 新機能用
+  vocab_quizzes: VocabQuestion[];
   key_phrases: KeyPhrase[];
   dictation_items: string[];
   overlappingTips?: string;
@@ -45,7 +45,7 @@ export const courseData: CourseData = {
       title: "Who is Shuzo Matsuoka?",
       script: "Hello, everyone. I am Matsuoka Shuzo. I was a professional tennis player about thirty years ago. Now I am a sportscaster and tell everyone about the great world of sports. By the way, what is your image of me? You may think of such words as 'passion,' 'spirit,' or 'cheer.' But I am not that kind of person. I am a negative person. So, I always try to support myself with positive words of encouragement.",
       slash_script: "Hello, everyone. / I am Matsuoka Shuzo. / I was a professional tennis player / about thirty years ago. / Now I am a sportscaster / and tell everyone / about the great world of sports. / By the way, / what is your image of me? / You may think of such words as / 'passion,' 'spirit,' or 'cheer.' / But I am not / that kind of person. / I am a negative person. / So, I always try / to support myself / with positive words of encouragement.",
-      japanese_translation: "みなさん、こんにちは。松岡修造です。私は約30年前、プロテニスプレーヤーでした。今はスポーツキャスターとして、みなさんにスポーツの素晴らしい世界について伝えています。ところで、私のイメージはどんなものですか？「情熱」「精神」「応援」といった言葉を思い浮かべるかもしれません。でも、私はそういう人間ではありません。私はネガティブな人間なのです。だから、いつも前向きな励ましの言葉で自分を支えるようにしているのです。",
+      japanese_translation: "みなさん、こんにちは。 / 私は松岡修造です。 / 私はプロテニスプレーヤーでした / 約30年前に。 / 今はスポーツキャスターです / そしてみんなに伝えています / スポーツの素晴らしい世界について。 / ところで、 / 私のイメージはどんなものですか？ / あなたは～のような言葉を思い浮かべるかもしれません / 「情熱」「精神」「応援」。 / でも、私は～ではありません / そういう種類の人間（ではありません）。 / 私はネガティブな人間なのです。 / だから、私はいつも～するようにしています / 自分自身を支える（ように） / 前向きな励ましの言葉で。",
       quizzes: [
         {
           q: "What was Shuzo's job thirty years ago?",
@@ -86,7 +86,7 @@ export const courseData: CourseData = {
       title: "It is Good to be Nervous!",
       script: "Are you often nervous during a test or a presentation? That is not a bad thing. You are nervous because you care about the results. That means that you are serious. You do not want to fail. You want to do well. Be glad that you are worried and change that feeling into something positive. Then, give 120% to achieve your goal!",
       slash_script: "Are you often nervous / during a test / or a presentation? / That is not a bad thing. / You are nervous / because you care / about the results. / That means that / you are serious. / You do not want to fail. / You want to do well. / Be glad / that you are worried / and change that feeling / into something positive. / Then, give 120% / to achieve your goal!",
-      japanese_translation: "テストや発表の時、よく緊張しますか？それは悪いことではありません。結果を気にしているから緊張するのです。それは、あなたが真剣だということを意味します。失敗したくない。うまくいってほしい。悩んでいることを喜び、その気持ちをポジティブなものに変えましょう。そして、目標を達成するために120％の力を出し切りましょう！",
+      japanese_translation: "あなたはよく緊張しますか？ / テストの間に / あるいはプレゼンテーション（の間に）？ / それは悪いことではありません。 / あなたが緊張するのは / ～だからです / あなたが結果を気にしている（から）。 / それは～ということを意味します / あなたが真剣だという（ことを）。 / あなたは失敗したくありません。 / あなたはうまくいってほしいと思っています。 / 喜びなさい / あなたが悩んでいることを / そしてその気持ちを変えなさい / 何かポジティブなものに。 / それから、120％を出しなさい / あなたの目標を達成するために！",
       quizzes: [
         {
           q: "Why does Shuzo say it is okay to be nervous?",
@@ -126,8 +126,8 @@ export const courseData: CourseData = {
       id: 3,
       title: "The Power of a Smile",
       script: "Many people can’t smile when they are having a hard time. But that is the most important time to try to smile. A smile will have a good effect on you. It will also be good for the people around you. It is a way to bring cheer into people’s lives. Say loudly with a smile, 'Next time, I’ll succeed!' If you say to yourself, 'I can do it,' your heart and body will believe you.",
-      slash_script: "Many people can’t smile / when they are having / a hard time. / But that is / the most important time / to try to smile. / A smile / will have a good effect / on you. / It will also be good for the people around you. / It is a way / to bring cheer / into people’s lives. / Say loudly with a smile, / 'Next time, I’ll succeed!' / If you say to yourself, / 'I can do it,' / your heart and body / will believe you.",
-      japanese_translation: "辛い時、多くの人は笑顔になれません。でも、そんな時こそ笑顔になろうとすることが最も大切なのです。笑顔はあなたに良い効果をもたらします。また、周りの人々にとっても良いことでしょう。それは人々の生活に元気を届ける方法です。笑顔で大きな声で言いましょう。「次は成功するぞ！」と。「自分ならできる」と自分に言い聞かせれば、心も体もあなたを信じてくれるはずです。",
+      slash_script: "Many people can’t smile / when they are having / a hard time. / But that is / the most important time / to try to smile. / A smile / will have a good effect / on you. / It will also be good / for the people around you. / It is a way / to bring cheer / into people’s lives. / Say loudly with a smile, / 'Next time, I’ll succeed!' / If you say to yourself, / 'I can do it,' / your heart and body / will believe you.",
+      japanese_translation: "多くの人は笑顔になれません / ～なとき / 辛い思いをしている（とき）。 / でも、それこそが / 最も重要な時なのです / 笑顔になろうとする。 / 笑顔は / 良い効果をもたらすでしょう / あなたに。 / それはまた良いことでしょう / あなたの周りの人々にとっても。 / それは～するための方法です / 元気をもたらす（ための） / 人々の生活に。 / 笑顔で大きな声で言いなさい / 「次は成功するぞ！」と。 / もしあなたが自分自身に言えば / 「自分ならできる」と / あなたの心と体は / あなたを信じるでしょう。",
       quizzes: [
         {
           q: "When is the most important time to smile?",
@@ -168,7 +168,7 @@ export const courseData: CourseData = {
       title: "New Worlds Will Open",
       script: "Sometimes, it may be hard to say 'thank you.' But we should feel thankful to those people. If it is difficult, you should just thank the people in your heart. In your school life, you may face some difficulties. To study and to do club activities may be stressful. But these experiences will help you become stronger. When life is hard, believe in yourself. Then new worlds will open for you. Good luck to you all!",
       slash_script: "Sometimes, / it may be hard / to say 'thank you.' / But we should feel thankful / to those people. / If it is difficult, / you should just thank / the people in your heart. / In your school life, / you may face / some difficulties. / To study / and to do club activities / may be stressful. / But these experiences / will help you / become stronger. / When life is hard, / believe in yourself. / Then new worlds / will open for you. / Good luck to you all!",
-      japanese_translation: "時として、「ありがとう」と言うのが難しいこともあるかもしれません。でも、私たちはその人たちに感謝の気持ちを持つべきです。もし難しければ、心の中で感謝するだけでいいのです。学校生活では、いくつかの困難に直面することもあるでしょう。勉強や部活動はストレスフルかもしれません。しかし、これらの経験はあなたを強くしてくれます。人生が辛い時は、自分を信ください。そうすれば、あなたのために新しい世界が開けるでしょう。みなさんに幸運を！",
+      japanese_translation: "時々 / ～は難しいかもしれません / 「ありがとう」と言うことは。 / でも、私たちは感謝すべきです / そうした人々に。 / もしそれが難しければ / あなたはただ感謝すればよいのです / 心の中でその人たちに。 / 学校生活では / あなたは直面するかもしれません / いくつかの困難に。 / 勉強することや部活動をすることは / ストレスがたまるかもしれません。 / でも、これらの経験は / あなたを助けるでしょう / より強くなる（ことを）。 / 人生が辛い時は / 自分を信じなさい。 / そうすれば新しい世界が / あなたのために開かれるでしょう。 / みんなに幸運を！",
       quizzes: [
         {
           q: "What should you do if it's hard to say 'thank you' out loud?",
