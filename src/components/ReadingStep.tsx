@@ -10,7 +10,6 @@ interface ReadingStepProps {
 export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese, onNext }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // コンポーネントが切り替わるときに音声を止める
   useEffect(() => {
     return () => {
       if ('speechSynthesis' in window) {
@@ -25,7 +24,6 @@ export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese,
         window.speechSynthesis.cancel();
         setIsPlaying(false);
       } else {
-        // スラッシュ記号を取り除いて読み上げる
         const cleanScript = slashScript.replace(/\//g, '');
         const utterance = new SpeechSynthesisUtterance(cleanScript);
         utterance.lang = 'en-US';
@@ -48,7 +46,6 @@ export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese,
       </div>
 
       <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 space-y-10 relative">
-        {/* 音声再生ボタン */}
         <div className="flex justify-end pr-2">
           <button
             onClick={handlePlay}
@@ -59,7 +56,7 @@ export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese,
           </button>
         </div>
 
-        {/* 英語（スラッシュリーディング用） */}
+        {/* 英語：スラッシュ表示 */}
         <div className="space-y-4">
           <span className="px-4 py-1 bg-orange-500 text-white text-xs font-black rounded-full uppercase tracking-widest">English</span>
           <p className="text-2xl md:text-3xl font-black text-slate-800 leading-relaxed tracking-tight">
@@ -74,11 +71,16 @@ export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese,
 
         <div className="h-px bg-slate-100" />
 
-        {/* 日本語訳 */}
+        {/* 日本語訳：スラッシュ表示に対応 */}
         <div className="space-y-4">
           <span className="px-4 py-1 bg-slate-200 text-slate-600 text-xs font-black rounded-full uppercase tracking-widest">Translation</span>
           <p className="text-xl md:text-2xl font-bold text-slate-600 leading-relaxed">
-            {japanese}
+            {japanese.split('/').map((part, i, arr) => (
+              <React.Fragment key={i}>
+                <span className="hover:text-slate-900 transition-colors">{part.trim()}</span>
+                {i !== arr.length - 1 && <span className="text-slate-300 mx-2 font-light">/</span>}
+              </React.Fragment>
+            ))}
           </p>
         </div>
       </div>
