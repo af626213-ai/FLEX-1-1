@@ -28,7 +28,7 @@ const KeyPhrasesInternal = ({ items, onNext }: { items: KeyPhrase[], onNext: () 
   };
   if (!currentItem) return null;
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 font-pop text-left">
+    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 font-pop">
       <div className="text-center space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><BookOpen size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Key Phrases</h2>
@@ -45,7 +45,7 @@ const KeyPhrasesInternal = ({ items, onNext }: { items: KeyPhrase[], onNext: () 
   );
 };
 
-// --- インライン・オーバーラッピング (修正版) ---
+// --- インライン・オーバーラッピング (説明文追加・構文修正済) ---
 const OverlappingInternal = ({ script, onNext }: { script: string, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const handlePlay = () => {
@@ -63,7 +63,7 @@ const OverlappingInternal = ({ script, onNext }: { script: string, onNext: () =>
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><Mic size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Step 6: Overlapping</h2>
         
-        {/* 固定の説明文を追加 */}
+        {/* 固定の説明文 */}
         <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4">
           <p className="text-sm md:text-base font-bold text-orange-700 leading-relaxed">
             英語の音声を聴きながら、その音声にピッタリ重ねて<br className="hidden md:block" />
@@ -82,21 +82,6 @@ const OverlappingInternal = ({ script, onNext }: { script: string, onNext: () =>
       <button onClick={() => { stopSpeech(); onNext(); }} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all">
         Go to Shadowing
       </button>
-    </div>
-  );
-};
-
-  return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop">
-      <div className="text-center space-y-2">
-        <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><Mic size={32} /></div>
-        <h2 className="text-3xl font-black text-slate-800">Step 6: Overlapping</h2>
-      </div>
-      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 relative">
-        <button onClick={handlePlay} className="absolute top-4 right-4 w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center hover:bg-orange-200 transition-all">{isPlaying ? <Square size={24} /> : <Volume2 size={24} />}</button>
-        <p className="text-2xl text-slate-800 leading-relaxed pr-20 font-bold">{script}</p>
-      </div>
-      <button onClick={() => { stopSpeech(); onNext(); }} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all">Go to Shadowing</button>
     </div>
   );
 };
@@ -127,7 +112,6 @@ const ShadowingInternal = ({ script, onNext }: { script: string, onNext: () => v
   );
 };
 
-// 【重要】ビルドエラー修正のため、export default を確実に付けています
 export default function App() {
   const [currentStep, setCurrentStep] = useState<'menu' | 'listening' | 'quiz' | 'vocabulary' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('menu');
   const [selectedEpisode, setSelectedEpisode] = useState<Episode>(courseData.episodes[0]);
@@ -184,7 +168,6 @@ export default function App() {
         <div className="max-w-4xl mx-auto">
           {currentStep === 'menu' && (
             <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              {/* ブランドヘッダー */}
               <div className="text-center py-16 bg-gradient-to-b from-orange-50 to-white rounded-[60px] border-4 border-orange-100 shadow-inner relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-32 h-32 bg-orange-200/20 rounded-full -translate-x-16 -translate-y-16" />
                 <div className="absolute bottom-0 right-0 w-48 h-48 bg-orange-300/10 rounded-full translate-x-20 translate-y-20" />
@@ -199,7 +182,6 @@ export default function App() {
                 <div className="mt-6 w-24 h-2 bg-orange-500 mx-auto rounded-full relative z-10" />
               </div>
 
-              {/* レッスンリスト（グループ表示） */}
               <div className="space-y-16">
                 <section className="space-y-6">
                   <div className="flex items-center gap-4 px-2">
