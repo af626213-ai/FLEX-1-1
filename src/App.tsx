@@ -45,7 +45,7 @@ const KeyPhrasesInternal = ({ items, onNext }: { items: KeyPhrase[], onNext: () 
   );
 };
 
-// --- インライン・オーバーラッピング (説明文追加・構文修正済) ---
+// --- インライン・オーバーラッピング (説明文追加版) ---
 const OverlappingInternal = ({ script, onNext }: { script: string, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const handlePlay = () => {
@@ -62,8 +62,6 @@ const OverlappingInternal = ({ script, onNext }: { script: string, onNext: () =>
       <div className="text-center space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><Mic size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Step 6: Overlapping</h2>
-        
-        {/* 固定の説明文 */}
         <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4">
           <p className="text-sm md:text-base font-bold text-orange-700 leading-relaxed">
             英語の音声を聴きながら、その音声にピッタリ重ねて<br className="hidden md:block" />
@@ -71,22 +69,16 @@ const OverlappingInternal = ({ script, onNext }: { script: string, onNext: () =>
           </p>
         </div>
       </div>
-
       <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 relative">
-        <button onClick={handlePlay} className="absolute top-4 right-4 w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center hover:bg-orange-200 transition-all">
-          {isPlaying ? <Square size={24} /> : <Volume2 size={24} />}
-        </button>
+        <button onClick={handlePlay} className="absolute top-4 right-4 w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center hover:bg-orange-200 transition-all">{isPlaying ? <Square size={24} /> : <Volume2 size={24} />}</button>
         <p className="text-2xl text-slate-800 leading-relaxed pr-20 font-bold">{script}</p>
       </div>
-      
-      <button onClick={() => { stopSpeech(); onNext(); }} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all">
-        Go to Shadowing
-      </button>
+      <button onClick={() => { stopSpeech(); onNext(); }} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all">Go to Shadowing</button>
     </div>
   );
 };
 
-// --- インライン・シャドーイング ---
+// --- インライン・シャドーイング (説明文追加版) ---
 const ShadowingInternal = ({ script, onNext }: { script: string, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const handlePlay = () => {
@@ -103,9 +95,18 @@ const ShadowingInternal = ({ script, onNext }: { script: string, onNext: () => v
       <div className="space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><Headphones size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Step 7: Shadowing</h2>
+        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 max-w-2xl mx-auto">
+          <p className="text-sm md:text-base font-bold text-orange-700 leading-relaxed">
+            英語の音声をすぐ後ろから影（shadow）のように<br className="hidden md:block" />
+            追いかけて音読しよう！
+          </p>
+        </div>
       </div>
       <div className="bg-white rounded-[32px] p-10 shadow-xl border-4 border-slate-100 flex flex-col items-center gap-6">
-        <button onClick={handlePlay} className="w-28 h-28 bg-orange-500 text-white rounded-full flex items-center justify-center hover:bg-orange-600 shadow-md transform active:scale-95">{isPlaying ? <Square size={40} /> : <Volume2 size={40} />}</button>
+        <button onClick={handlePlay} className="w-28 h-28 bg-orange-500 text-white rounded-full flex items-center justify-center hover:bg-orange-600 shadow-md transform active:scale-95 transition-all">{isPlaying ? <Square size={40} /> : <Volume2 size={40} />}</button>
+        <div className="mt-4 p-4 bg-slate-50 rounded-xl w-full">
+          <p className="text-slate-400 text-sm font-bold italic">Tips: 耳に全神経を集中させて！</p>
+        </div>
       </div>
       <button onClick={() => { stopSpeech(); onNext(); }} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all">Complete Episode</button>
     </div>
