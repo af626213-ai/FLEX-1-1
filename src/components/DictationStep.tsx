@@ -4,11 +4,11 @@ import { Mic, CheckCircle, AlertCircle, Volume2, ChevronRight } from 'lucide-rea
 interface DictationStepProps {
   script: string;
   items: string[]; 
-  rate: number;
+  rate: number; // App.tsxからの受け取りは維持（エラー防止）
   onNext: () => void;
 }
 
-export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rate, onNext }) => {
+export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onNext }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -17,6 +17,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
 
   const currentAnswer = items[currentIndex];
 
+  // ターゲットの1文を抽出して ______ に置換
   const getTargetSentence = () => {
     if (!currentAnswer) return "";
     const sentences = script.split(/(?<=[.!?])\s+/);
@@ -25,23 +26,18 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
     return target.replace(regex, ' ______ ');
   };
 
-  // 読み上げ速度の異常を修正
+  // 読み上げ速度を「1.0」に完全固定
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US';
-      
-      // 異常な高速化を防ぐため、rateの値を厳密に制御
-      // ブラウザの標準(1.0)に対して、メニューの値をそのまま使いつつ
-      // 念のため 0.5 〜 1.5 の範囲にクランプ（固定）します
-      const safeRate = Math.min(Math.max(rate, 0.5), 1.5);
-      u.rate = safeRate; 
-      
+      u.rate = 1.0; // 常に標準速度で再生
       window.speechSynthesis.speak(u);
     }
   };
 
+  // 紙吹雪エフェクト
   const fireConfetti = () => {
     const scriptTag = document.createElement('script');
     scriptTag.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
@@ -154,7 +150,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
                 {showHint ? 'Hide hint' : 'Need a hint?'}
               </button>
               {showHint && (
-                <div className="text-slate-400 font-mono tracking-[0.3em] mt-2">
+                <div className="text-slate-500 font-mono tracking-[0.3em] mt-2">
                   {currentAnswer.charAt(0)}...{currentAnswer.charAt(currentAnswer.length - 1)}
                 </div>
               )}
