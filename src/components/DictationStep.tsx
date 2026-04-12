@@ -14,9 +14,11 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
   const [userInput, setUserInput] = useState('');
   const [isPhraseComplete, setIsPhraseComplete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // 効果音をプリロード（遅延対策）
+  const correctAudio = useRef(new Audio('/correct.mp3'));
 
   const currentPhrase = items[currentIndex];
-  // 記号を含んだままの単語配列
   const targetWords = currentPhrase ? currentPhrase.split(/\s+/) : [];
 
   const getTargetSentence = () => {
@@ -26,6 +28,18 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
   };
 
   const targetSentence = getTargetSentence();
+
+  // クラッカー用のライブラリを事前に読み込む
+  useEffect(() => {
+    const scriptTag = document.createElement('script');
+    scriptTag.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+    scriptTag.async = true;
+    document.head.appendChild(scriptTag);
+    
+    // 音量の事前設定
+    correctAudio.current.volume = 0.4;
+    correctAudio.current.load();
+  }, []);
 
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
@@ -37,37 +51,34 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
     }
   };
 
-  const fireConfetti = () => {
+  const fireEffects = () => {
+    // 1. 即座に音を鳴らす（再生位置を0に戻してから再生）
+    correctAudio.current.currentTime = 0;
+    correctAudio.current.play().catch(() => {});
+
+    // 2. クラッカーを出す
     if ((window as any).confetti) {
       (window as any).confetti({
-        particleCount: 40,
-        spread: 60,
+        particleCount: 50,
+        spread: 70,
         origin: { y: 0.7 },
-        colors: ['#f97316', '#fbbf24', '#ffffff']
+        colors: ['#f97316', '#fbbf24', '#ffffff'],
+        zIndex: 9999
       });
     }
   };
 
-  const playCorrectSound = () => {
-    const audio = new Audio('/correct.mp3');
-    audio.volume = 0.4;
-    audio.play().catch(() => {});
-  };
-
-  // --- 判定ロジックの強化 ---
+  // 判定ロジック
   useEffect(() => {
     if (isPhraseComplete || !targetWords[wordIndex]) return;
 
-    // ユーザー入力とターゲット単語の両方から記号を除去して比較
     const normalize = (str: string) => str.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-    
     const cleanUser = normalize(userInput);
     const cleanTarget = normalize(targetWords[wordIndex]);
 
-    // 長さが一致し、かつ内容が一致した場合のみ正解とする
     if (cleanUser === cleanTarget && cleanUser.length > 0) {
-      playCorrectSound();
-      fireConfetti();
+      // 正解した瞬間にエフェクト実行
+      fireEffects();
 
       if (wordIndex < targetWords.length - 1) {
         setWordIndex(prev => prev + 1);
@@ -77,16 +88,14 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
         setUserInput('');
       }
     }
-  }, [userInput, wordIndex, targetWords, isPhraseComplete]);
+  }, [userInput]);
 
   useEffect(() => {
     if (targetSentence) speak(targetSentence);
   }, [currentIndex]);
 
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (inputRef.current) inputRef.current.focus();
   }, [wordIndex, isPhraseComplete]);
 
   const handleNextPhrase = () => {
@@ -141,9 +150,8 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
                             type="text"
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
-                            // 入力幅を単語の長さに合わせて動的に調整
                             style={{ width: `${Math.max(word.length, 2)}ch` }}
-                            className="bg-orange-50 border-b-4 border-orange-500 outline-none text-orange-600 text-center animate-pulse transition-all"
+                            className="bg-orange-50 border-b-4 border-orange-500 outline-none text-orange-600 text-center animate-pulse"
                             autoFocus
                             autoComplete="off"
                             autoCapitalize="off"
