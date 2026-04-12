@@ -207,18 +207,22 @@ export default function App() {
                 <h1 className="text-sm font-black text-orange-400 uppercase tracking-[0.5em] mb-4 relative z-10">The Ultimate Learning Method</h1>
                 <h2 className="text-6xl md:text-7xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
                 
-                {/* 速度調整ボタン（0.8 / 1.0 / 1.1 に変更済み） */}
+                {/* 速度調整ボタン（0.6 / 0.8 / 1.0 / 1.1 に変更済み） */}
                 <div className="mt-8 relative z-10 flex flex-col items-center gap-3">
                   <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest">
                     <Zap size={14} className="text-orange-400" />
                     Speed Control
                   </div>
                   <div className="bg-white p-1.5 rounded-2xl shadow-md border-2 border-orange-100 flex gap-1">
-                    {[0.8, 1.0, 1.1].map((rate) => (
+                    {[0.6, 0.8, 1.0, 1.1].map((rate) => (
                       <button
                         key={rate}
                         onClick={() => setSpeechRate(rate)}
-                        className={`px-6 py-2 rounded-xl font-black text-sm transition-all ${speechRate === rate ? 'bg-orange-500 text-white shadow-inner' : 'text-slate-400 hover:bg-orange-50'}`}
+                        className={`px-4 py-2 min-w-[50px] rounded-xl font-black text-sm transition-all ${
+                          speechRate === rate 
+                            ? 'bg-orange-500 text-white shadow-inner' 
+                            : 'text-slate-400 hover:bg-orange-50'
+                        }`}
                       >
                         {rate.toFixed(1)}x
                       </button>
@@ -240,7 +244,7 @@ export default function App() {
           {currentStep === 'vocabulary' && <VocabularyStep questions={selectedEpisode.vocab_quizzes} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('phrases'); }} />}
           {currentStep === 'phrases' && <KeyPhrasesInternal items={selectedEpisode.key_phrases} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('dictation'); }} />}
           
-          {/* ディクテーションへの rate 渡しを修正済み */}
+          {/* ディクテーションへの rate 渡しを適用済み */}
           {currentStep === 'dictation' && <DictationStep script={selectedEpisode.script} items={selectedEpisode.dictation_items} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('reading'); }} />}
           
           {currentStep === 'reading' && <ReadingStep slashScript={selectedEpisode.slash_script || selectedEpisode.script} japanese={selectedEpisode.japanese_translation || ""} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('overlapping'); }} />}
