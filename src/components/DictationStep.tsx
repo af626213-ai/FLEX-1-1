@@ -17,32 +17,42 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
 
   const currentAnswer = items[currentIndex];
 
-  // 全文の中から現在のフレーズを ______ に置き換える処理
-  const getQuestionSentence = () => {
+  // 全文の中から、currentAnswerを含む「1つのセンテンス」だけを抽出して ______ に置換する関数
+  const getTargetSentence = () => {
     if (!currentAnswer) return "";
-    // 文中からフレーズを探して ______ に置換（大文字小文字を区別せず、最初の1致箇所を置換）
+    
+    // 文の区切り（. ! ?）でスクリプトを分割
+    const sentences = script.split(/(?<=[.!?])\s+/);
+    // 現在の答えが含まれている文を探す
+    const target = sentences.find(s => s.toLowerCase().includes(currentAnswer.toLowerCase())) || currentAnswer;
+    
+    // その文の中の正解箇所を ______ に置換（大文字小文字を区別せず、最初の一致箇所）
     const regex = new RegExp(currentAnswer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    return script.replace(regex, ' ______ ');
+    return target.replace(regex, ' ______ ');
   };
 
+  // 読み上げ速度の微調整
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US';
-      // 速すぎる問題を解決するため、さらに係数を微調整 (rate * 0.9)
-      u.rate = rate * 0.9; 
+      
+      // ブラウザの1.1倍は速すぎるため、係数をかけて抑制 (例: メニュー1.1x → 内部0.77x)
+      // 0.8x 〜 1.1x の範囲が実用的になるよう調整
+      u.rate = rate * 0.7; 
+      
       window.speechSynthesis.speak(u);
     }
   };
 
-  // 紙吹雪エフェクト
+  // 紙吹雪エフェクト（正解時）
   const fireConfetti = () => {
     const scriptTag = document.createElement('script');
     scriptTag.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
     scriptTag.onload = () => {
       (window as any).confetti({
-        particleCount: 60,
+        particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
         colors: ['#f97316', '#fbbf24', '#ffffff']
@@ -64,7 +74,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
       const audio = new Audio('/correct.mp3');
       audio.volume = 0.4;
       audio.play().catch(() => {});
-      fireConfetti(); // クラッカー
+      fireConfetti(); // クラッカー演出
       speak(currentAnswer);
     } else {
       setIsCorrect(false);
@@ -86,7 +96,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500 font-pop">
+    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 font-pop">
       <div className="text-center space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md">
           <Mic size={32} />
@@ -94,26 +104,24 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
         <h2 className="text-3xl font-black text-slate-800">Step 4: Dictation</h2>
       </div>
 
-      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 space-y-8">
-        <div className="flex justify-center">
-          <button
-            onClick={() => speak(currentAnswer)}
-            className="flex items-center gap-3 px-8 py-4 bg-orange-100 text-orange-600 rounded-2xl font-black hover:bg-orange-200 transition-all active:scale-95 shadow-sm"
-          >
-            <Volume2 size={24} />
-            <span>Listen to the word</span>
-          </button>
-        </div>
+      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 space-y-8 text-center">
+        <button
+          onClick={() => speak(currentAnswer)}
+          className="mx-auto flex items-center gap-3 px-8 py-4 bg-orange-100 text-orange-600 rounded-2xl font-black hover:bg-orange-200 transition-all active:scale-95 shadow-sm"
+        >
+          <Volume2 size={24} />
+          <span>Listen</span>
+        </button>
 
         <div className="space-y-6">
-          {/* 文脈を表示するエリア */}
-          <div className="text-xl md:text-2xl font-bold text-slate-600 leading-relaxed text-left px-6 py-8 bg-slate-50 rounded-2xl border-2 border-slate-100 shadow-inner">
-            {getQuestionSentence().split(' ______ ').map((part, i, arr) => (
+          {/* 文脈の1文のみを表示 */}
+          <div className="text-xl md:text-2xl font-bold text-slate-700 leading-relaxed text-center px-6 py-10 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+            {getTargetSentence().split(' ______ ').map((part, i, arr) => (
               <React.Fragment key={i}>
                 {part}
                 {i !== arr.length - 1 && (
-                  <span className={`px-2 mx-1 border-b-4 ${isCorrect ? 'text-emerald-500 border-emerald-500' : 'text-orange-500 border-orange-500'}`}>
-                    {isCorrect ? currentAnswer : '______'}
+                  <span className="text-orange-500 border-b-4 border-orange-500 px-2 mx-1">
+                    {isCorrect ? currentAnswer : '__________'}
                   </span>
                 )}
               </React.Fragment>
@@ -144,12 +152,12 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
 
           {isCorrect === false && (
             <div className="flex flex-col items-center gap-2">
-              <div className="p-4 bg-red-50 text-red-600 font-bold rounded-2xl flex items-center gap-2 animate-shake">
+              <div className="p-4 bg-red-50 text-red-600 font-bold rounded-2xl flex items-center gap-2">
                 <AlertCircle size={20} />
                 <span>Try again!</span>
               </div>
-              <button onClick={() => setShowHint(!showHint)} className="text-xs text-slate-400 underline">
-                {showHint ? 'Hide hint' : 'Show hint'}
+              <button onClick={() => setShowHint(!showHint)} className="text-xs text-slate-400 underline italic">
+                {showHint ? 'Hide hint' : 'Need a hint?'}
               </button>
               {showHint && (
                 <div className="text-slate-400 font-mono tracking-[0.3em] mt-2">
@@ -161,9 +169,9 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
 
           {isCorrect && (
             <div className="space-y-6 animate-in zoom-in duration-300">
-              <div className="p-8 bg-emerald-50 rounded-[24px] border-4 border-emerald-100 flex flex-col items-center gap-2">
-                <CheckCircle size={60} className="text-emerald-500 mb-2" />
-                <span className="text-emerald-700 font-black text-2xl">Excellent!</span>
+              <div className="p-6 bg-emerald-50 rounded-[24px] border-4 border-emerald-100 flex flex-col items-center gap-2">
+                <CheckCircle size={50} className="text-emerald-500 mb-2" />
+                <span className="text-emerald-700 font-black text-2xl">Well Done!</span>
               </div>
               <button
                 onClick={handleNext}
