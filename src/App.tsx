@@ -7,14 +7,13 @@ import { DictationStep } from './components/DictationStep';
 import { ReadingStep } from './components/ReadingStep';
 import { courseData, Episode, KeyPhrase } from './data/episodes';
 
-// 音声を強制停止するユーティリティ
 const stopSpeech = () => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
 };
 
-// --- インライン・キーフレーズ ---
+// --- サブコンポーネント群 ---
 const KeyPhrasesInternal = ({ items, onNext }: { items: KeyPhrase[], onNext: () => void }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentItem = items[currentIndex];
@@ -45,7 +44,6 @@ const KeyPhrasesInternal = ({ items, onNext }: { items: KeyPhrase[], onNext: () 
   );
 };
 
-// --- インライン・オーバーラッピング (説明文追加版) ---
 const OverlappingInternal = ({ script, onNext }: { script: string, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const handlePlay = () => {
@@ -78,7 +76,6 @@ const OverlappingInternal = ({ script, onNext }: { script: string, onNext: () =>
   );
 };
 
-// --- インライン・シャドーイング (説明文追加版) ---
 const ShadowingInternal = ({ script, onNext }: { script: string, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const handlePlay = () => {
@@ -104,15 +101,13 @@ const ShadowingInternal = ({ script, onNext }: { script: string, onNext: () => v
       </div>
       <div className="bg-white rounded-[32px] p-10 shadow-xl border-4 border-slate-100 flex flex-col items-center gap-6">
         <button onClick={handlePlay} className="w-28 h-28 bg-orange-500 text-white rounded-full flex items-center justify-center hover:bg-orange-600 shadow-md transform active:scale-95 transition-all">{isPlaying ? <Square size={40} /> : <Volume2 size={40} />}</button>
-        <div className="mt-4 p-4 bg-slate-50 rounded-xl w-full">
-          <p className="text-slate-400 text-sm font-bold italic">Tips: 耳に全神経を集中させて！</p>
-        </div>
       </div>
       <button onClick={() => { stopSpeech(); onNext(); }} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all">Complete Episode</button>
     </div>
   );
 };
 
+// --- メインコンポーネント ---
 export default function App() {
   const [currentStep, setCurrentStep] = useState<'menu' | 'listening' | 'quiz' | 'vocabulary' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('menu');
   const [selectedEpisode, setSelectedEpisode] = useState<Episode>(courseData.episodes[0]);
@@ -124,14 +119,9 @@ export default function App() {
     link.href = 'https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500;900&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
-
     const style = document.createElement('style');
-    style.textContent = `
-      .font-pop { font-family: 'Kiwi Maru', sans-serif !important; }
-      body { background-color: #f8fafc; }
-    `;
+    style.textContent = `.font-pop { font-family: 'Kiwi Maru', sans-serif !important; } body { background-color: #f8fafc; }`;
     document.head.appendChild(style);
-
     const audio = new Audio('/bgm.mp3'); audio.loop = true; audio.volume = 0.15; bgmRef.current = audio;
     return () => { audio.pause(); stopSpeech(); };
   }, []);
@@ -149,6 +139,45 @@ export default function App() {
     isBgmPlaying ? bgmRef.current.pause() : bgmRef.current.play().catch(() => {}); 
     setIsBgmPlaying(!isBgmPlaying); 
   };
+
+  // Lessonごとに表示するためのヘルパー関数
+  const renderLessonSection = (lessonNum: number, title: string, startId: number, endId: number) => (
+    <section className="space-y-6">
+      <div className="flex items-center gap-4 px-2">
+        <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+          <span className="bg-orange-500 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap">Lesson {lessonNum}</span>
+          <span className="truncate">{title}</span>
+        </h3>
+        <div className="h-px bg-slate-200 flex-1" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {courseData.episodes.filter(ep => ep.id >= startId && ep.id <= endId).map((ep, idx) => (
+          <div 
+            key={ep.id} 
+            onClick={() => { stopSpeech(); setSelectedEpisode(ep); setCurrentStep('listening'); }} 
+            className="group relative bg-white rounded-[32px] p-6 border-4 border-slate-100 hover:border-orange-400 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
+          >
+            <div className="absolute -right-4 -bottom-6 text-9xl font-black text-slate-50 group-hover:text-orange-50 transition-colors pointer-events-none">
+              {idx + 1}
+            </div>
+            <div className="relative z-10 flex items-center gap-5">
+              <div className="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-xl shadow-lg group-hover:scale-110 transition-transform">
+                P{idx + 1}
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-black text-orange-400 uppercase tracking-widest mb-1">Part {idx + 1}</p>
+                <h3 className="text-lg md:text-xl font-black text-slate-800 leading-tight group-hover:text-orange-600 transition-colors line-clamp-1">
+                  {ep.title}
+                </h3>
+              </div>
+              <Play className="text-slate-300 group-hover:text-orange-500 transition-all" size={20} fill="currentColor" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-pop">
@@ -169,61 +198,25 @@ export default function App() {
         <div className="max-w-4xl mx-auto">
           {currentStep === 'menu' && (
             <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              {/* ブランドヘッダー */}
               <div className="text-center py-16 bg-gradient-to-b from-orange-50 to-white rounded-[60px] border-4 border-orange-100 shadow-inner relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-32 h-32 bg-orange-200/20 rounded-full -translate-x-16 -translate-y-16" />
                 <div className="absolute bottom-0 right-0 w-48 h-48 bg-orange-300/10 rounded-full translate-x-20 translate-y-20" />
-                
-                <h1 className="text-sm font-black text-orange-400 uppercase tracking-[0.5em] mb-4 relative z-10">
-                  The Ultimate English Learning Method
-                </h1>
-                <h2 className="text-6xl md:text-7xl font-black text-orange-700 leading-none tracking-tighter relative z-10">
-                  English<br />
-                  <span className="text-orange-500">Navigator</span>
-                </h2>
+                <h1 className="text-sm font-black text-orange-400 uppercase tracking-[0.5em] mb-4 relative z-10">The Ultimate Learning Method</h1>
+                <h2 className="text-6xl md:text-7xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
                 <div className="mt-6 w-24 h-2 bg-orange-500 mx-auto rounded-full relative z-10" />
               </div>
 
+              {/* レッスンリスト */}
               <div className="space-y-16">
-                <section className="space-y-6">
-                  <div className="flex items-center gap-4 px-2">
-                    <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-                      <span className="bg-orange-500 text-white px-3 py-1 rounded-lg text-sm">Lesson 1</span>
-                      How Can We Become Stronger?
-                    </h3>
-                    <div className="h-px bg-slate-200 flex-1" />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {courseData.episodes.filter(ep => ep.id <= 4).map((ep, idx) => (
-                      <div 
-                        key={ep.id} 
-                        onClick={() => { stopSpeech(); setSelectedEpisode(ep); setCurrentStep('listening'); }} 
-                        className="group relative bg-white rounded-[32px] p-6 border-4 border-slate-100 hover:border-orange-400 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
-                      >
-                        <div className="absolute -right-4 -bottom-6 text-9xl font-black text-slate-50 group-hover:text-orange-50 transition-colors pointer-events-none">
-                          {idx + 1}
-                        </div>
-                        <div className="relative z-10 flex items-center gap-5">
-                          <div className="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-xl shadow-lg group-hover:scale-110 transition-transform">
-                            P{idx + 1}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-xs font-black text-orange-400 uppercase tracking-widest mb-1">Part {idx + 1}</p>
-                            <h3 className="text-lg md:text-xl font-black text-slate-800 leading-tight group-hover:text-orange-600 transition-colors">
-                              {ep.title}
-                            </h3>
-                          </div>
-                          <Play className="text-slate-300 group-hover:text-orange-500 transition-all" size={20} fill="currentColor" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                {renderLessonSection(1, "How Can We Become Stronger?", 1, 4)}
+                {renderLessonSection(2, "What Are Your Rocks?", 5, 8)}
+                {/* 今後 Lesson 3 を追加する場合は以下のように1行追加するだけ！ 
+                  {renderLessonSection(3, "Next Lesson Title", 9, 12)} 
+                */}
               </div>
 
-              <p className="text-center text-slate-400 font-bold text-sm pb-10">
-                Master English through Listening, Reading, and Speaking.
-              </p>
+              <p className="text-center text-slate-400 font-bold text-sm pb-10">Master English through Listening, Reading, and Speaking.</p>
             </div>
           )}
 
@@ -232,13 +225,7 @@ export default function App() {
           {currentStep === 'vocabulary' && <VocabularyStep questions={selectedEpisode.vocab_quizzes} onNext={() => { stopSpeech(); setCurrentStep('phrases'); }} />}
           {currentStep === 'phrases' && <KeyPhrasesInternal items={selectedEpisode.key_phrases} onNext={() => { stopSpeech(); setCurrentStep('dictation'); }} />}
           {currentStep === 'dictation' && <DictationStep script={selectedEpisode.script} items={selectedEpisode.dictation_items} onNext={() => { stopSpeech(); setCurrentStep('reading'); }} />}
-          {currentStep === 'reading' && (
-            <ReadingStep 
-              slashScript={selectedEpisode.slash_script || selectedEpisode.script} 
-              japanese={selectedEpisode.japanese_translation || "No translation available."} 
-              onNext={() => { stopSpeech(); setCurrentStep('overlapping'); }} 
-            />
-          )}
+          {currentStep === 'reading' && <ReadingStep slashScript={selectedEpisode.slash_script || selectedEpisode.script} japanese={selectedEpisode.japanese_translation || ""} onNext={() => { stopSpeech(); setCurrentStep('overlapping'); }} />}
           {currentStep === 'overlapping' && <OverlappingInternal script={selectedEpisode.script} onNext={() => { stopSpeech(); setCurrentStep('shadowing'); }} />}
           {currentStep === 'shadowing' && <ShadowingInternal script={selectedEpisode.script} onNext={() => { stopSpeech(); setCurrentStep('result'); }} />}
           
