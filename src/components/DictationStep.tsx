@@ -16,6 +16,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
   const inputRef = useRef<HTMLInputElement>(null);
 
   const currentPhrase = items[currentIndex];
+  // 記号を含んだままの単語配列
   const targetWords = currentPhrase ? currentPhrase.split(/\s+/) : [];
 
   const getTargetSentence = () => {
@@ -37,17 +38,14 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
   };
 
   const fireConfetti = () => {
-    const scriptTag = document.createElement('script');
-    scriptTag.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
-    scriptTag.onload = () => {
+    if ((window as any).confetti) {
       (window as any).confetti({
         particleCount: 40,
         spread: 60,
         origin: { y: 0.7 },
         colors: ['#f97316', '#fbbf24', '#ffffff']
       });
-    };
-    document.head.appendChild(scriptTag);
+    }
   };
 
   const playCorrectSound = () => {
@@ -56,13 +54,17 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
     audio.play().catch(() => {});
   };
 
-  // 1単語ごとのリアルタイム判定
+  // --- 判定ロジックの強化 ---
   useEffect(() => {
     if (isPhraseComplete || !targetWords[wordIndex]) return;
 
-    const cleanUser = userInput.toLowerCase().trim().replace(/[.,!?]/g, '');
-    const cleanTarget = targetWords[wordIndex].toLowerCase().trim().replace(/[.,!?]/g, '');
+    // ユーザー入力とターゲット単語の両方から記号を除去して比較
+    const normalize = (str: string) => str.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    
+    const cleanUser = normalize(userInput);
+    const cleanTarget = normalize(targetWords[wordIndex]);
 
+    // 長さが一致し、かつ内容が一致した場合のみ正解とする
     if (cleanUser === cleanTarget && cleanUser.length > 0) {
       playCorrectSound();
       fireConfetti();
@@ -75,13 +77,12 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
         setUserInput('');
       }
     }
-  }, [userInput]);
+  }, [userInput, wordIndex, targetWords, isPhraseComplete]);
 
   useEffect(() => {
     if (targetSentence) speak(targetSentence);
   }, [currentIndex]);
 
-  // 次のワードへ進んだ時に自動でフォーカスを当てる
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -140,8 +141,13 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
                             type="text"
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
-                            className="w-24 md:w-32 bg-orange-50 border-b-4 border-orange-500 outline-none text-orange-600 text-center animate-pulse"
+                            // 入力幅を単語の長さに合わせて動的に調整
+                            style={{ width: `${Math.max(word.length, 2)}ch` }}
+                            className="bg-orange-50 border-b-4 border-orange-500 outline-none text-orange-600 text-center animate-pulse transition-all"
                             autoFocus
+                            autoComplete="off"
+                            autoCapitalize="off"
+                            spellCheck="false"
                           />
                         );
                       }
