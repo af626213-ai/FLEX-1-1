@@ -17,36 +17,31 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
 
   const currentAnswer = items[currentIndex];
 
-  // 全文の中から、currentAnswerを含む「1つのセンテンス」だけを抽出して ______ に置換する関数
   const getTargetSentence = () => {
     if (!currentAnswer) return "";
-    
-    // 文の区切り（. ! ?）でスクリプトを分割
     const sentences = script.split(/(?<=[.!?])\s+/);
-    // 現在の答えが含まれている文を探す
     const target = sentences.find(s => s.toLowerCase().includes(currentAnswer.toLowerCase())) || currentAnswer;
-    
-    // その文の中の正解箇所を ______ に置換（大文字小文字を区別せず、最初の一致箇所）
     const regex = new RegExp(currentAnswer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     return target.replace(regex, ' ______ ');
   };
 
-  // 読み上げ速度の微調整
+  // 読み上げ速度の異常を修正
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US';
       
-      // ブラウザの1.1倍は速すぎるため、係数をかけて抑制 (例: メニュー1.1x → 内部0.77x)
-      // 0.8x 〜 1.1x の範囲が実用的になるよう調整
-      u.rate = rate * 0.7; 
+      // 異常な高速化を防ぐため、rateの値を厳密に制御
+      // ブラウザの標準(1.0)に対して、メニューの値をそのまま使いつつ
+      // 念のため 0.5 〜 1.5 の範囲にクランプ（固定）します
+      const safeRate = Math.min(Math.max(rate, 0.5), 1.5);
+      u.rate = safeRate; 
       
       window.speechSynthesis.speak(u);
     }
   };
 
-  // 紙吹雪エフェクト（正解時）
   const fireConfetti = () => {
     const scriptTag = document.createElement('script');
     scriptTag.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
@@ -74,7 +69,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
       const audio = new Audio('/correct.mp3');
       audio.volume = 0.4;
       audio.play().catch(() => {});
-      fireConfetti(); // クラッカー演出
+      fireConfetti();
       speak(currentAnswer);
     } else {
       setIsCorrect(false);
@@ -114,7 +109,6 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
         </button>
 
         <div className="space-y-6">
-          {/* 文脈の1文のみを表示 */}
           <div className="text-xl md:text-2xl font-bold text-slate-700 leading-relaxed text-center px-6 py-10 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
             {getTargetSentence().split(' ______ ').map((part, i, arr) => (
               <React.Fragment key={i}>
