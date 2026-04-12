@@ -7,7 +7,7 @@ import { DictationStep } from './components/DictationStep';
 import { ReadingStep } from './components/ReadingStep';
 import { courseData, Episode, KeyPhrase } from './data/episodes';
 
-// --- グローバルな音声停止 & 速度適用ユーティリティ ---
+// 音声を強制停止するユーティリティ
 const stopSpeech = () => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
@@ -23,7 +23,7 @@ const KeyPhrasesInternal = ({ items, rate, onNext }: { items: KeyPhrase[], rate:
     stopSpeech();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
-    u.rate = rate; // 選択された速度を適用
+    u.rate = rate; // 速度適用
     window.speechSynthesis.speak(u);
   };
 
@@ -42,11 +42,11 @@ const KeyPhrasesInternal = ({ items, rate, onNext }: { items: KeyPhrase[], rate:
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><BookOpen size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Key Phrases</h2>
       </div>
-      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-orange-100 min-h-[250px] flex flex-col justify-center text-center space-y-6 relative">
+      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-orange-100 min-h-[250px] flex flex-col justify-center text-center space-y-6 relative text-left">
         <button onClick={() => handleSpeak(currentItem.phrase)} className="absolute top-4 right-4 p-3 bg-orange-50 text-orange-600 rounded-full hover:bg-orange-100 transition-all">
           <Volume2 size={20} />
         </button>
-        <h3 className="text-4xl font-black text-orange-600 tracking-tight">{currentItem.phrase}</h3>
+        <h3 className="text-4xl font-black text-orange-600 tracking-tight text-center">{currentItem.phrase}</h3>
         <p className="text-xl text-slate-700 leading-relaxed font-bold">{currentItem.explanation}</p>
       </div>
       <div className="flex gap-4">
@@ -129,7 +129,7 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState<'menu' | 'listening' | 'quiz' | 'vocabulary' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('menu');
   const [selectedEpisode, setSelectedEpisode] = useState<Episode>(courseData.episodes[0]);
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
-  const [speechRate, setSpeechRate] = useState<number>(1.0); // 速度管理ステート
+  const [speechRate, setSpeechRate] = useState<number>(1.0);
   const bgmRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -160,7 +160,7 @@ export default function App() {
     <section className="space-y-6">
       <div className="flex items-center gap-4 px-2">
         <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-          <span className="bg-orange-500 text-white px-4 py-1.5 rounded-xl shadow-sm">Lesson {lessonNum}</span>
+          <span className="bg-orange-500 text-white px-4 py-1.5 rounded-xl shadow-sm whitespace-nowrap">Lesson {lessonNum}</span>
         </h3>
         <div className="h-1 bg-slate-200 flex-1 rounded-full" />
       </div>
@@ -168,7 +168,7 @@ export default function App() {
         {courseData.episodes.filter(ep => ep.id >= startId && ep.id <= endId).map((ep, idx) => (
           <div key={ep.id} onClick={() => { stopSpeech(); setSelectedEpisode(ep); setCurrentStep('listening'); }} className="group relative bg-white rounded-[32px] p-6 border-4 border-slate-100 hover:border-orange-400 cursor-pointer transition-all shadow-sm hover:shadow-2xl hover:-translate-y-1 overflow-hidden">
             <div className="absolute -right-4 -bottom-6 text-9xl font-black text-slate-50 group-hover:text-orange-50 transition-colors pointer-events-none">{idx + 1}</div>
-            <div className="relative z-10 flex items-center gap-5">
+            <div className="relative z-10 flex items-center gap-5 text-left">
               <div className="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-xl shadow-lg group-hover:scale-110 transition-transform">P{idx + 1}</div>
               <div className="flex-1">
                 <p className="text-xs font-black text-orange-400 uppercase tracking-widest mb-1">Part {idx + 1}</p>
@@ -186,9 +186,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 flex flex-col font-pop">
       <header className="bg-white sticky top-0 z-50 border-b-4 border-slate-100 px-6 py-4 flex justify-between items-center shadow-sm">
         <button onClick={() => { stopSpeech(); setCurrentStep('menu'); }} className="p-2 bg-slate-100 hover:bg-orange-100 rounded-xl text-slate-800"><Home size={22} /></button>
-        <div className="flex gap-2">
-          <button onClick={toggleBgm} className={`px-4 py-2 rounded-xl border-2 font-bold text-sm ${isBgmPlaying ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-slate-600 border-slate-200'}`}>{isBgmPlaying ? 'BGM ON' : 'BGM OFF'}</button>
-        </div>
+        <button onClick={toggleBgm} className={`px-4 py-2 rounded-xl border-2 font-bold text-sm ${isBgmPlaying ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-slate-600 border-slate-200'}`}>{isBgmPlaying ? 'BGM ON' : 'BGM OFF'}</button>
       </header>
 
       {currentStep !== 'menu' && currentStep !== 'result' && (
@@ -199,15 +197,16 @@ export default function App() {
         </nav>
       )}
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 text-center">
         <div className="max-w-4xl mx-auto">
           {currentStep === 'menu' && (
             <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
               <div className="text-center py-16 bg-gradient-to-b from-orange-50 to-white rounded-[60px] border-4 border-orange-100 shadow-inner relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-32 h-32 bg-orange-200/20 rounded-full -translate-x-16 -translate-y-16" />
+                <div className="absolute bottom-0 right-0 w-48 h-48 bg-orange-300/10 rounded-full translate-x-20 translate-y-20" />
                 <h1 className="text-sm font-black text-orange-400 uppercase tracking-[0.5em] mb-4 relative z-10">The Ultimate Learning Method</h1>
                 <h2 className="text-6xl md:text-7xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
                 
-                {/* 速度調整ボタン */}
                 <div className="mt-8 relative z-10 flex flex-col items-center gap-3">
                   <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest">
                     <Zap size={14} className="text-orange-400" />
@@ -231,6 +230,7 @@ export default function App() {
                 {renderLessonSection(1, 1, 4)}
                 {renderLessonSection(2, 5, 8)}
               </div>
+              <p className="text-center text-slate-400 font-bold text-sm pb-10">Master English through Listening, Reading, and Speaking.</p>
             </div>
           )}
 
