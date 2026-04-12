@@ -23,7 +23,7 @@ const KeyPhrasesInternal = ({ items, rate, onNext }: { items: KeyPhrase[], rate:
     stopSpeech();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
-    u.rate = rate; // 速度適用
+    u.rate = rate;
     window.speechSynthesis.speak(u);
   };
 
@@ -66,7 +66,7 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
       else { 
         stopSpeech();
         const u = new SpeechSynthesisUtterance(script); u.lang = 'en-US'; 
-        u.rate = rate; // 速度適用
+        u.rate = rate; 
         u.onend = () => setIsPlaying(false); window.speechSynthesis.speak(u); setIsPlaying(true); 
       }
     }
@@ -100,7 +100,7 @@ const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: num
       else { 
         stopSpeech();
         const u = new SpeechSynthesisUtterance(script); u.lang = 'en-US'; 
-        u.rate = rate; // 速度適用
+        u.rate = rate; 
         u.onend = () => setIsPlaying(false); window.speechSynthesis.speak(u); setIsPlaying(true); 
       }
     }
@@ -129,7 +129,7 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState<'menu' | 'listening' | 'quiz' | 'vocabulary' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('menu');
   const [selectedEpisode, setSelectedEpisode] = useState<Episode>(courseData.episodes[0]);
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
-  const [speechRate, setSpeechRate] = useState<number>(1.0);
+  const [speechRate, setSpeechRate] = useState<number>(1.0); // 速度管理
   const bgmRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -157,7 +157,7 @@ export default function App() {
   };
 
   const renderLessonSection = (lessonNum: number, startId: number, endId: number) => (
-    <section className="space-y-6">
+    <section className="space-y-6 text-left">
       <div className="flex items-center gap-4 px-2">
         <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
           <span className="bg-orange-500 text-white px-4 py-1.5 rounded-xl shadow-sm whitespace-nowrap">Lesson {lessonNum}</span>
@@ -207,13 +207,14 @@ export default function App() {
                 <h1 className="text-sm font-black text-orange-400 uppercase tracking-[0.5em] mb-4 relative z-10">The Ultimate Learning Method</h1>
                 <h2 className="text-6xl md:text-7xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
                 
+                {/* 速度調整ボタン（0.9 / 1.0 / 1.1 に変更） */}
                 <div className="mt-8 relative z-10 flex flex-col items-center gap-3">
                   <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest">
                     <Zap size={14} className="text-orange-400" />
                     Speed Control
                   </div>
                   <div className="bg-white p-1.5 rounded-2xl shadow-md border-2 border-orange-100 flex gap-1">
-                    {[0.8, 1.0, 1.2].map((rate) => (
+                    {[0.9, 1.0, 1.1].map((rate) => (
                       <button
                         key={rate}
                         onClick={() => setSpeechRate(rate)}
