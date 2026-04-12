@@ -1,16 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, CheckCircle, AlertCircle, Volume2, Play, ChevronRight } from 'lucide-react';
-
-interface DictationItem {
-  id: number;
-  question: string;
-  answer: string;
-}
+import { Mic, CheckCircle, AlertCircle, Volume2, ChevronRight } from 'lucide-react';
 
 interface DictationStepProps {
   script: string;
-  items: DictationItem[];
-  rate: number; // App.tsxから速度を受け取る
+  items: string[]; // App.tsxから渡される string[] に合わせました
+  rate: number;
   onNext: () => void;
 }
 
@@ -21,34 +15,36 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
   const [showHint, setShowHint] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentItem = items[currentIndex];
+  // 現在の正解フレーズ
+  const currentAnswer = items[currentIndex];
 
-  // 音声読み上げ関数（Appからの速度を適用）
+  // 音声読み上げ
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US';
-      u.rate = rate; // ここでAppの速度を適用！
+      u.rate = rate;
       window.speechSynthesis.speak(u);
     }
   };
 
   useEffect(() => {
-    // ステップ開始時や問題切り替え時に音声を流す
-    speak(currentItem.answer);
+    if (currentAnswer) {
+      speak(currentAnswer);
+    }
   }, [currentIndex]);
 
   const checkAnswer = () => {
+    // 記号を除去して比較
     const cleanUser = userInput.toLowerCase().trim().replace(/[.,!?]/g, '');
-    const cleanAnswer = currentItem.answer.toLowerCase().trim().replace(/[.,!?]/g, '');
+    const cleanAnswer = currentAnswer.toLowerCase().trim().replace(/[.,!?]/g, '');
 
     if (cleanUser === cleanAnswer) {
       setIsCorrect(true);
       const audio = new Audio('/correct.mp3');
       audio.volume = 0.4;
       audio.play().catch(() => {});
-      speak(currentItem.answer); // 正解時にもう一度流す
     } else {
       setIsCorrect(false);
       const audio = new Audio('/wrong.mp3');
@@ -68,6 +64,8 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
     }
   };
 
+  if (!currentAnswer) return null;
+
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500 font-pop">
       <div className="text-center space-y-2">
@@ -83,7 +81,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
       <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 space-y-8">
         <div className="flex justify-center">
           <button
-            onClick={() => speak(currentItem.answer)}
+            onClick={() => speak(currentAnswer)}
             className="flex items-center gap-3 px-8 py-4 bg-orange-100 text-orange-600 rounded-2xl font-black hover:bg-orange-200 transition-all active:scale-95 shadow-sm"
           >
             <Volume2 size={24} />
@@ -92,17 +90,17 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
         </div>
 
         <div className="space-y-6">
-          <div className="text-2xl font-bold text-slate-700 leading-relaxed text-center px-4 py-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-            {currentItem.question.split('______').map((part, i, arr) => (
-              <React.Fragment key={i}>
-                {part}
-                {i !== arr.length - 1 && (
-                  <span className="text-orange-500 border-b-4 border-orange-500 px-2 mx-1">
-                    {isCorrect ? currentItem.answer : '__________'}
-                  </span>
-                )}
-              </React.Fragment>
-            ))}
+          {/* 問題文の自動生成：______ の部分に正解が入るイメージを表示 */}
+          <div className="text-2xl font-bold text-slate-700 leading-relaxed text-center px-4 py-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+            {isCorrect ? (
+              <span className="text-emerald-600 underline decoration-4 underline-offset-8 transition-all">
+                {currentAnswer}
+              </span>
+            ) : (
+              <span className="text-orange-500 tracking-[0.2em]">
+                {currentAnswer.split('').map(() => '_').join('')}
+              </span>
+            )}
           </div>
 
           {!isCorrect && (
@@ -115,6 +113,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
                 onKeyDown={(e) => e.key === 'Enter' && checkAnswer()}
                 placeholder="Type the answer here..."
                 className="w-full px-6 py-5 bg-slate-100 border-4 border-transparent focus:border-orange-400 focus:bg-white rounded-2xl outline-none text-xl font-bold transition-all text-center"
+                autoFocus
               />
               <button
                 onClick={checkAnswer}
@@ -127,21 +126,22 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
           )}
 
           {isCorrect === false && (
-            <div className="p-4 bg-red-50 rounded-2xl flex items-center gap-3 text-red-600 font-bold animate-bounce">
-              <AlertCircle size={20} />
-              <span>Try again!</span>
+            <div className="p-4 bg-red-50 rounded-2xl flex flex-col items-center gap-3 text-red-600 font-bold">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={20} />
+                <span>Try again!</span>
+              </div>
               <button 
                 onClick={() => setShowHint(!showHint)} 
-                className="ml-auto text-xs underline"
+                className="text-xs underline text-slate-400"
               >
                 {showHint ? 'Hide Hint' : 'Show Hint'}
               </button>
-            </div>
-          )}
-          
-          {showHint && !isCorrect && (
-            <div className="text-center text-slate-400 font-mono tracking-widest text-sm">
-              Hint: {currentItem.answer.charAt(0)}...{currentItem.answer.charAt(currentItem.answer.length-1)}
+              {showHint && (
+                <div className="text-slate-500 font-mono tracking-[0.3em] mt-2">
+                  {currentAnswer.charAt(0)}...{currentAnswer.charAt(currentAnswer.length - 1)}
+                </div>
+              )}
             </div>
           )}
 
@@ -149,8 +149,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, rat
             <div className="space-y-6 animate-in zoom-in duration-300">
               <div className="p-6 bg-emerald-50 rounded-[24px] border-4 border-emerald-100 flex flex-col items-center gap-2">
                 <CheckCircle size={48} className="text-emerald-500" />
-                <span className="text-emerald-700 font-black text-xl">Perfect!</span>
-                <p className="text-slate-600 font-bold">{currentItem.answer}</p>
+                <span className="text-emerald-700 font-black text-xl">Great Job!</span>
               </div>
               <button
                 onClick={handleNext}
