@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, CheckCircle2, ArrowRight, Volume2 } from 'lucide-react';
+import { BookOpen, ArrowRight, Volume2 } from 'lucide-react';
 
 interface VocabQuestion {
   word: string;
@@ -9,33 +9,29 @@ interface VocabQuestion {
 
 interface VocabularyStepProps {
   questions: VocabQuestion[];
+  rate: number; // 追加
   onNext: () => void;
 }
 
-export const VocabularyStep: React.FC<VocabularyStepProps> = ({ questions, onNext }) => {
+export const VocabularyStep: React.FC<VocabularyStepProps> = ({ questions, rate, onNext }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-
   const currentQuestion = questions[currentIndex];
 
-  // --- 音声読み上げロジック ---
   const speakWord = (text: string) => {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // 進行中の音声を停止
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
-      utterance.rate = 0.8; // 少しゆっくりめに
+      utterance.rate = rate; // 速度を適用
       window.speechSynthesis.speak(utterance);
     }
   };
 
-  // 新しい単語が表示されたら自動で読み上げる（お好みで）
   useEffect(() => {
     speakWord(currentQuestion.word);
   }, [currentIndex]);
 
-  // --- 演出ロジック ---
   const fireConfetti = () => {
     const scriptTag = document.createElement('script');
     scriptTag.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
@@ -50,21 +46,14 @@ export const VocabularyStep: React.FC<VocabularyStepProps> = ({ questions, onNex
     document.head.appendChild(scriptTag);
   };
 
-  const playCorrectSound = () => {
-    const audio = new Audio('/correct.mp3');
-    audio.volume = 0.4;
-    audio.play().catch(() => {});
-  };
-
   const handleOptionClick = (option: string) => {
     if (selectedOption !== null) return;
     setSelectedOption(option);
     if (option === currentQuestion.meaning) {
-      setIsCorrect(true);
-      playCorrectSound();
+      const audio = new Audio('/correct.mp3');
+      audio.volume = 0.4;
+      audio.play().catch(() => {});
       fireConfetti();
-    } else {
-      setIsCorrect(false);
     }
   };
 
@@ -72,7 +61,6 @@ export const VocabularyStep: React.FC<VocabularyStepProps> = ({ questions, onNex
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setSelectedOption(null);
-      setIsCorrect(null);
     } else {
       onNext();
     }
@@ -85,42 +73,28 @@ export const VocabularyStep: React.FC<VocabularyStepProps> = ({ questions, onNex
           <BookOpen size={32} />
         </div>
         <h2 className="text-3xl font-black text-slate-800">Vocabulary Check</h2>
-        <p className="text-slate-500 font-bold tracking-wider">Listen and choose the meaning.</p>
       </div>
 
-      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 space-y-8">
-        <div className="text-center relative">
-          <span className="text-sm font-black text-orange-400 uppercase tracking-widest">
-            Word {currentIndex + 1} of {questions.length}
-          </span>
-          
-          <div className="flex items-center justify-center gap-4 mt-2 mb-8">
-            <div className="text-5xl font-black text-slate-800 tracking-tight">
-              {currentQuestion.word}
-            </div>
-            {/* 読み上げボタン */}
-            <button 
-              onClick={() => speakWord(currentQuestion.word)}
-              className="p-3 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-all active:scale-90"
-              title="Listen again"
-            >
-              <Volume2 size={24} />
-            </button>
-          </div>
+      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 space-y-8 text-center">
+        <div className="flex items-center justify-center gap-4">
+          <div className="text-5xl font-black text-slate-800 tracking-tight">{currentQuestion.word}</div>
+          <button 
+            onClick={() => speakWord(currentQuestion.word)}
+            className="p-3 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-all active:scale-90"
+          >
+            <Volume2 size={24} />
+          </button>
         </div>
 
         <div className="grid grid-cols-1 gap-3">
           {currentQuestion.options.map((option) => {
-            const isTarget = selectedOption === option;
             const isRight = option === currentQuestion.meaning;
-            
             let bgColor = "bg-slate-50 border-slate-200 hover:border-orange-300";
             if (selectedOption !== null) {
               if (isRight) bgColor = "bg-emerald-500 border-emerald-500 text-white";
-              else if (isTarget) bgColor = "bg-red-500 border-red-500 text-white";
+              else if (selectedOption === option) bgColor = "bg-red-500 border-red-500 text-white";
               else bgColor = "bg-slate-50 border-slate-100 opacity-50";
             }
-
             return (
               <button
                 key={option}
@@ -135,15 +109,13 @@ export const VocabularyStep: React.FC<VocabularyStepProps> = ({ questions, onNex
         </div>
 
         {selectedOption !== null && (
-          <div className="animate-in slide-in-from-bottom-4 duration-300">
-            <button
-              onClick={handleNext}
-              className="w-full py-5 bg-orange-500 text-white font-bold text-2xl rounded-2xl shadow-lg hover:bg-orange-600 flex items-center justify-center gap-3"
-            >
-              <span>{currentIndex < questions.length - 1 ? 'Next Word' : 'Finish Vocab Check'}</span>
-              <ArrowRight size={24} />
-            </button>
-          </div>
+          <button
+            onClick={handleNext}
+            className="w-full py-5 bg-orange-500 text-white font-bold text-2xl rounded-2xl shadow-lg hover:bg-orange-600 flex items-center justify-center gap-3"
+          >
+            <span>{currentIndex < questions.length - 1 ? 'Next Word' : 'Finish Vocab Check'}</span>
+            <ArrowRight size={24} />
+          </button>
         )}
       </div>
     </div>
