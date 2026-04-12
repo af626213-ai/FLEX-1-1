@@ -76,7 +76,7 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
       <div className="text-center space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><Mic size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Step 6: Overlapping</h2>
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4">
+        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 text-center">
           <p className="text-sm md:text-base font-bold text-orange-700 leading-relaxed">英語の音声を聴きながら、その音声にピッタリ重ねてスクリプトを同時に音読しよう！</p>
         </div>
       </div>
@@ -110,7 +110,7 @@ const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: num
       <div className="space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><Headphones size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Step 7: Shadowing</h2>
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 max-w-2xl mx-auto">
+        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 max-w-2xl mx-auto text-center">
           <p className="text-sm md:text-base font-bold text-orange-700 leading-relaxed">英語の音声をすぐ後ろから影（shadow）のように追いかけて音読しよう！</p>
         </div>
       </div>
@@ -207,14 +207,14 @@ export default function App() {
                 <h1 className="text-sm font-black text-orange-400 uppercase tracking-[0.5em] mb-4 relative z-10">The Ultimate Learning Method</h1>
                 <h2 className="text-6xl md:text-7xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
                 
-                {/* 速度調整ボタン（0.9 / 1.0 / 1.1 に変更） */}
+                {/* 速度調整ボタン（0.8 / 1.0 / 1.1 に変更済み） */}
                 <div className="mt-8 relative z-10 flex flex-col items-center gap-3">
                   <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest">
                     <Zap size={14} className="text-orange-400" />
                     Speed Control
                   </div>
                   <div className="bg-white p-1.5 rounded-2xl shadow-md border-2 border-orange-100 flex gap-1">
-                    {[0.9, 1.0, 1.1].map((rate) => (
+                    {[0.8, 1.0, 1.1].map((rate) => (
                       <button
                         key={rate}
                         onClick={() => setSpeechRate(rate)}
@@ -239,7 +239,10 @@ export default function App() {
           {currentStep === 'quiz' && <QuizStep quizzes={selectedEpisode.quizzes} onNext={() => { stopSpeech(); setCurrentStep('vocabulary'); }} />}
           {currentStep === 'vocabulary' && <VocabularyStep questions={selectedEpisode.vocab_quizzes} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('phrases'); }} />}
           {currentStep === 'phrases' && <KeyPhrasesInternal items={selectedEpisode.key_phrases} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('dictation'); }} />}
-          {currentStep === 'dictation' && <DictationStep script={selectedEpisode.script} items={selectedEpisode.dictation_items} onNext={() => { stopSpeech(); setCurrentStep('reading'); }} />}
+          
+          {/* ディクテーションへの rate 渡しを修正済み */}
+          {currentStep === 'dictation' && <DictationStep script={selectedEpisode.script} items={selectedEpisode.dictation_items} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('reading'); }} />}
+          
           {currentStep === 'reading' && <ReadingStep slashScript={selectedEpisode.slash_script || selectedEpisode.script} japanese={selectedEpisode.japanese_translation || ""} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('overlapping'); }} />}
           {currentStep === 'overlapping' && <OverlappingInternal script={selectedEpisode.script} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('shadowing'); }} />}
           {currentStep === 'shadowing' && <ShadowingInternal script={selectedEpisode.script} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('result'); }} />}
