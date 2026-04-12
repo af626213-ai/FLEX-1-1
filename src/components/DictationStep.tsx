@@ -15,7 +15,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
   const [isPhraseComplete, setIsPhraseComplete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
-  // 効果音をプリロード（遅延対策）
+  // 音源を事前にロード（グローバルレベルで保持）
   const correctAudio = useRef(new Audio('/correct.mp3'));
 
   const currentPhrase = items[currentIndex];
@@ -29,16 +29,14 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
 
   const targetSentence = getTargetSentence();
 
-  // クラッカー用のライブラリを事前に読み込む
+  // ライブラリの準備
   useEffect(() => {
     const scriptTag = document.createElement('script');
     scriptTag.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
     scriptTag.async = true;
     document.head.appendChild(scriptTag);
-    
-    // 音量の事前設定
-    correctAudio.current.volume = 0.4;
     correctAudio.current.load();
+    correctAudio.current.volume = 0.5;
   }, []);
 
   const speak = (text: string) => {
@@ -51,34 +49,35 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
     }
   };
 
-  const fireEffects = () => {
-    // 1. 即座に音を鳴らす（再生位置を0に戻してから再生）
+  // 即時実行エフェクト
+  const handleImmediateSuccess = () => {
+    // 1. 音を即座に再生
     correctAudio.current.currentTime = 0;
-    correctAudio.current.play().catch(() => {});
+    correctAudio.current.play();
 
-    // 2. クラッカーを出す
+    // 2. クラッカーを即座に発射
     if ((window as any).confetti) {
       (window as any).confetti({
-        particleCount: 50,
-        spread: 70,
+        particleCount: 100, // ボリュームアップ
+        spread: 90,
         origin: { y: 0.7 },
-        colors: ['#f97316', '#fbbf24', '#ffffff'],
         zIndex: 9999
       });
     }
   };
 
-  // 判定ロジック
-  useEffect(() => {
-    if (isPhraseComplete || !targetWords[wordIndex]) return;
+  // onChangeの中で直接判定（useEffectを介さない）
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setUserInput(val);
 
     const normalize = (str: string) => str.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-    const cleanUser = normalize(userInput);
+    const cleanUser = normalize(val);
     const cleanTarget = normalize(targetWords[wordIndex]);
 
     if (cleanUser === cleanTarget && cleanUser.length > 0) {
-      // 正解した瞬間にエフェクト実行
-      fireEffects();
+      // 一致した瞬間にエフェクト！
+      handleImmediateSuccess();
 
       if (wordIndex < targetWords.length - 1) {
         setWordIndex(prev => prev + 1);
@@ -88,7 +87,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
         setUserInput('');
       }
     }
-  }, [userInput]);
+  };
 
   useEffect(() => {
     if (targetSentence) speak(targetSentence);
@@ -149,7 +148,7 @@ export const DictationStep: React.FC<DictationStepProps> = ({ script, items, onN
                             ref={inputRef}
                             type="text"
                             value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
+                            onChange={handleInputChange}
                             style={{ width: `${Math.max(word.length, 2)}ch` }}
                             className="bg-orange-50 border-b-4 border-orange-500 outline-none text-orange-600 text-center animate-pulse"
                             autoFocus
