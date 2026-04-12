@@ -4,17 +4,16 @@ import { BookOpenCheck, ChevronRight, Volume2, Square } from 'lucide-react';
 interface ReadingStepProps {
   slashScript: string;
   japanese: string;
+  rate: number; // 追加
   onNext: () => void;
 }
 
-export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese, onNext }) => {
+export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese, rate, onNext }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     return () => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     };
   }, []);
 
@@ -27,7 +26,7 @@ export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese,
         const cleanScript = slashScript.replace(/\//g, '');
         const utterance = new SpeechSynthesisUtterance(cleanScript);
         utterance.lang = 'en-US';
-        utterance.rate = 0.85;
+        utterance.rate = rate; // 速度を適用
         utterance.onend = () => setIsPlaying(false);
         window.speechSynthesis.speak(utterance);
         setIsPlaying(true);
@@ -42,7 +41,6 @@ export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese,
           <BookOpenCheck size={32} />
         </div>
         <h2 className="text-3xl font-black text-slate-800">Step 5: Reading</h2>
-        <p className="text-base text-slate-500 font-bold">Read and understand the structure.</p>
       </div>
 
       <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 space-y-10 relative">
@@ -56,8 +54,7 @@ export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese,
           </button>
         </div>
 
-        {/* 英語：スラッシュ表示 */}
-        <div className="space-y-4">
+        <div className="space-y-4 text-left">
           <span className="px-4 py-1 bg-orange-500 text-white text-xs font-black rounded-full uppercase tracking-widest">English</span>
           <p className="text-2xl md:text-3xl font-black text-slate-800 leading-relaxed tracking-tight">
             {slashScript.split('/').map((part, i, arr) => (
@@ -71,8 +68,7 @@ export const ReadingStep: React.FC<ReadingStepProps> = ({ slashScript, japanese,
 
         <div className="h-px bg-slate-100" />
 
-        {/* 日本語訳：スラッシュ表示に対応 */}
-        <div className="space-y-4">
+        <div className="space-y-4 text-left">
           <span className="px-4 py-1 bg-slate-200 text-slate-600 text-xs font-black rounded-full uppercase tracking-widest">Translation</span>
           <p className="text-xl md:text-2xl font-bold text-slate-600 leading-relaxed">
             {japanese.split('/').map((part, i, arr) => (
