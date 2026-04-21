@@ -6,7 +6,7 @@ import { VocabularyStep } from './components/VocabularyStep';
 import { DictationStep } from './components/DictationStep';
 import { ReadingStep } from './components/ReadingStep';
 
-// データのインポート元を新しい構造（index.ts）に変更
+// 新しい分割管理構造からのインポート
 import { courseData } from './data/episodes';
 import type { Episode, KeyPhrase } from './data/episodes';
 
@@ -45,12 +45,12 @@ const KeyPhrasesInternal = ({ items, rate, onNext }: { items: KeyPhrase[], rate:
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><BookOpen size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Key Phrases</h2>
       </div>
-      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-orange-100 min-h-[250px] flex flex-col justify-center text-center space-y-6 relative text-left">
+      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-orange-100 min-h-[250px] flex flex-col justify-center text-center space-y-6 relative">
         <button onClick={() => handleSpeak(currentItem.phrase)} className="absolute top-4 right-4 p-3 bg-orange-50 text-orange-600 rounded-full hover:bg-orange-100 transition-all">
           <Volume2 size={20} />
         </button>
         <h3 className="text-4xl font-black text-orange-600 tracking-tight text-center">{currentItem.phrase}</h3>
-        <p className="text-xl text-slate-700 leading-relaxed font-bold">{currentItem.explanation}</p>
+        <p className="text-xl text-slate-700 leading-relaxed font-bold text-left">{currentItem.explanation}</p>
       </div>
       <div className="flex gap-4">
         <button onClick={() => currentIndex > 0 && setCurrentIndex(c => c - 1)} disabled={currentIndex === 0} className={`flex-1 py-4 rounded-2xl font-bold ${currentIndex === 0 ? 'bg-slate-100 text-slate-300' : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-orange-300'}`}>Back</button>
@@ -79,15 +79,15 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
       <div className="text-center space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><Mic size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Step 6: Overlapping</h2>
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 text-center">
-          <p className="text-sm md:text-base font-bold text-orange-700 leading-relaxed">英語の音声を聴きながら、その音声にピッタリ重ねてスクリプトを同時に音読しよう！</p>
+        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 text-center text-orange-700 font-bold">
+          音声にピッタリ重ねてスクリプトを同時に音読しよう！
         </div>
       </div>
       <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 relative">
         <button onClick={handlePlay} className="absolute top-4 right-4 w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center hover:bg-orange-200 transition-all">
           {isPlaying ? <Square size={24} /> : <Volume2 size={24} />}
         </button>
-        <p className="text-2xl text-slate-800 leading-relaxed pr-20 font-bold">{script}</p>
+        <p className="text-2xl text-slate-800 leading-relaxed pr-20 font-bold text-left">{script}</p>
       </div>
       <button onClick={() => { stopSpeech(); onNext(); }} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all">Go to Shadowing</button>
     </div>
@@ -113,8 +113,8 @@ const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: num
       <div className="space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><Headphones size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Step 7: Shadowing</h2>
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 max-w-2xl mx-auto text-center">
-          <p className="text-sm md:text-base font-bold text-orange-700 leading-relaxed">英語の音声をすぐ後ろから影（shadow）のように追いかけて音読しよう！</p>
+        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 text-orange-700 font-bold">
+          音声をすぐ後ろから影のように追いかけて音読しよう！
         </div>
       </div>
       <div className="bg-white rounded-[32px] p-10 shadow-xl border-4 border-slate-100 flex flex-col items-center gap-6">
@@ -132,7 +132,7 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState<'menu' | 'listening' | 'quiz' | 'vocabulary' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('menu');
   const [selectedEpisode, setSelectedEpisode] = useState<Episode>(courseData.episodes[0]);
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
-  const [speechRate, setSpeechRate] = useState<number>(1.0); // 速度管理
+  const [speechRate, setSpeechRate] = useState<number>(1.0); 
   const bgmRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -204,4 +204,62 @@ export default function App() {
         <div className="max-w-4xl mx-auto">
           {currentStep === 'menu' && (
             <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              <div className="text-center py-16 bg-gradient-to
+              <div className="text-center py-16 bg-gradient-to-b from-orange-50 to-white rounded-[60px] border-4 border-orange-100 shadow-inner relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-32 h-32 bg-orange-200/20 rounded-full -translate-x-16 -translate-y-16" />
+                <div className="absolute bottom-0 right-0 w-48 h-48 bg-orange-300/10 rounded-full translate-x-20 translate-y-20" />
+                <h1 className="text-sm font-black text-orange-400 uppercase tracking-[0.5em] mb-4 relative z-10">The Ultimate Learning Method</h1>
+                <h2 className="text-6xl md:text-7xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
+                
+                {/* 速度調整 0.6x / 0.8x / 1.0x / 1.1x */}
+                <div className="mt-8 relative z-10 flex flex-col items-center gap-3">
+                  <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest">
+                    <Zap size={14} className="text-orange-400" />
+                    Speed Control
+                  </div>
+                  <div className="bg-white p-1.5 rounded-2xl shadow-md border-2 border-orange-100 flex gap-1">
+                    {[0.6, 0.8, 1.0, 1.1].map((rate) => (
+                      <button
+                        key={rate}
+                        onClick={() => setSpeechRate(rate)}
+                        className={`px-4 py-2 min-w-[50px] rounded-xl font-black text-sm transition-all ${
+                          speechRate === rate ? 'bg-orange-500 text-white shadow-inner' : 'text-slate-400 hover:bg-orange-50'
+                        }`}
+                      >
+                        {rate.toFixed(1)}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-16">
+                {renderLessonSection(1, 1, 4)}
+                {renderLessonSection(2, 5, 8)}
+              </div>
+            </div>
+          )}
+
+          {currentStep === 'listening' && <ListeningStep script={selectedEpisode.script} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('quiz'); }} />}
+          {currentStep === 'quiz' && <QuizStep quizzes={selectedEpisode.quizzes} onNext={() => { stopSpeech(); setCurrentStep('vocabulary'); }} />}
+          {currentStep === 'vocabulary' && <VocabularyStep questions={selectedEpisode.vocab_quizzes} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('phrases'); }} />}
+          {currentStep === 'phrases' && <KeyPhrasesInternal items={selectedEpisode.key_phrases} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('dictation'); }} />}
+          
+          {/* ディクテーションへの rate 渡し対応済み */}
+          {currentStep === 'dictation' && <DictationStep script={selectedEpisode.script} items={selectedEpisode.dictation_items} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('reading'); }} />}
+          
+          {currentStep === 'reading' && <ReadingStep slashScript={selectedEpisode.slash_script || selectedEpisode.script} japanese={selectedEpisode.japanese_translation || ""} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('overlapping'); }} />}
+          {currentStep === 'overlapping' && <OverlappingInternal script={selectedEpisode.script} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('shadowing'); }} />}
+          {currentStep === 'shadowing' && <ShadowingInternal script={selectedEpisode.script} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('result'); }} />}
+          
+          {currentStep === 'result' && (
+            <div className="max-w-md mx-auto text-center space-y-6 py-12 animate-in zoom-in duration-500">
+              <CheckCircle size={80} className="text-green-500 mx-auto" />
+              <h2 className="text-4xl font-black text-slate-800">Lesson Cleared!</h2>
+              <button onClick={() => setCurrentStep('menu')} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-700 transition-all">Back to Story List</button>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
