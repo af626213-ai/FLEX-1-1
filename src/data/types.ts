@@ -1,28 +1,36 @@
-// src/data/types.ts
-export interface Quiz {
-  question: string;
+export type QuizQuestion = {
+  q: string;
   options: string[];
-  answer: string;
-}
+  ans: string;
+  explanation?: string;
+};
 
-export interface VocabQuiz {
-  word: string;
-  meaning: string;
-}
-
-export interface KeyPhrase {
+export type KeyPhrase = {
   phrase: string;
   explanation: string;
-}
+};
 
-export interface Episode {
+export type VocabQuestion = {
+  word: string;
+  meaning: string;
+  options: string[];
+};
+
+export type Episode = {
   id: number;
   title: string;
   script: string;
   slash_script?: string;
   japanese_translation?: string;
-  quizzes: Quiz[];
-  vocab_quizzes: VocabQuiz[];
+  quizzes: QuizQuestion[];
+  vocab_quizzes: VocabQuestion[];
   key_phrases: KeyPhrase[];
   dictation_items: string[];
-}
+  overlappingTips?: string;
+  shadowingTips?: string;
+};
+
+export type CourseData = {
+  course_title: string;
+  episodes: Episode[];
+};
