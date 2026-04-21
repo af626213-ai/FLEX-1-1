@@ -113,7 +113,7 @@ const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: num
       <div className="space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white mb-2 shadow-md"><Headphones size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Step 7: Shadowing</h2>
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 text-orange-700 font-bold">
+        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 text-center text-orange-700 font-bold">
           音声をすぐ後ろから影のように追いかけて音読しよう！
         </div>
       </div>
@@ -210,7 +210,6 @@ export default function App() {
                 <h1 className="text-sm font-black text-orange-400 uppercase tracking-[0.5em] mb-4 relative z-10">The Ultimate Learning Method</h1>
                 <h2 className="text-6xl md:text-7xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
                 
-                {/* 速度調整 0.6x / 0.8x / 1.0x / 1.1x */}
                 <div className="mt-8 relative z-10 flex flex-col items-center gap-3">
                   <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest">
                     <Zap size={14} className="text-orange-400" />
@@ -244,7 +243,6 @@ export default function App() {
           {currentStep === 'vocabulary' && <VocabularyStep questions={selectedEpisode.vocab_quizzes} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('phrases'); }} />}
           {currentStep === 'phrases' && <KeyPhrasesInternal items={selectedEpisode.key_phrases} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('dictation'); }} />}
           
-          {/* ディクテーションへの rate 渡し対応済み */}
           {currentStep === 'dictation' && <DictationStep script={selectedEpisode.script} items={selectedEpisode.dictation_items} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('reading'); }} />}
           
           {currentStep === 'reading' && <ReadingStep slashScript={selectedEpisode.slash_script || selectedEpisode.script} japanese={selectedEpisode.japanese_translation || ""} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('overlapping'); }} />}
