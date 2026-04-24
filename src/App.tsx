@@ -129,25 +129,11 @@ const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: num
 
 // --- メインコンポーネント ---
 export default function App() {
-  // ステップ管理 (初期状態は 'auth')
-  const [currentStep, setCurrentStep] = useState<'auth' | 'menu' | 'listening' | 'quiz' | 'vocabulary' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('auth');
-  const [password, setPassword] = useState('');
-  const [authError, setAuthError] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'menu' | 'listening' | 'quiz' | 'vocabulary' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('menu');
   const [selectedEpisode, setSelectedEpisode] = useState<Episode>(courseData.episodes[0]);
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
   const [speechRate, setSpeechRate] = useState<number>(1.0); 
   const bgmRef = useRef<HTMLAudioElement | null>(null);
-
-  // パスワードチェック
-  const handleAuth = () => {
-    if (password === '2026tm') {
-      setCurrentStep('menu');
-      setAuthError(false);
-    } else {
-      setAuthError(true);
-      setPassword('');
-    }
-  };
 
   useEffect(() => {
     const link = document.createElement('link');
@@ -199,46 +185,6 @@ export default function App() {
     </section>
   );
 
-  // --- パスワード画面 ---
-  if (currentStep === 'auth') {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-pop">
-        <div className="max-w-md w-full bg-white rounded-[40px] p-10 shadow-2xl border-4 border-orange-100 text-center space-y-8">
-          <div className="inline-block p-4 bg-orange-500 rounded-3xl text-white shadow-lg">
-            <Zap size={40} />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-3xl font-black text-slate-800 tracking-tighter">FLEX 1-1 Navigator</h2>
-            <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Enter Password to Start</p>
-          </div>
-          
-          <div className="space-y-4">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
-              placeholder="••••••"
-              className={`w-full px-6 py-5 bg-slate-100 border-4 rounded-2xl outline-none text-2xl font-black text-center transition-all ${
-                authError ? 'border-red-400 border-solid' : 'focus:border-orange-400 focus:bg-white border-transparent'
-              }`}
-              autoFocus
-            />
-            {authError && <p className="text-red-500 font-bold text-sm">Incorrect Password. Try again.</p>}
-            
-            <button
-              onClick={handleAuth}
-              className="w-full py-5 bg-slate-800 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-slate-900 active:scale-95 transition-all"
-            >
-              Unlock App
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // --- メインアプリ画面 ---
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-pop">
       <header className="bg-white sticky top-0 z-50 border-b-4 border-slate-100 px-6 py-4 flex justify-between items-center shadow-sm">
