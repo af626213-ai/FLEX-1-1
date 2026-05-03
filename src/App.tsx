@@ -155,7 +155,11 @@ export default function App() {
 
   const toggleBgm = () => { 
     if (!bgmRef.current) return; 
-    isBgmPlaying ? bgmRef.current.pause() : bgmRef.current.play().catch(() => {}); 
+    if (isBgmPlaying) {
+      bgmRef.current.pause();
+    } else {
+      bgmRef.current.play().catch(() => {});
+    }
     setIsBgmPlaying(!isBgmPlaying); 
   };
 
@@ -242,9 +246,7 @@ export default function App() {
           {currentStep === 'quiz' && <QuizStep quizzes={selectedEpisode.quizzes} onNext={() => { stopSpeech(); setCurrentStep('vocabulary'); }} />}
           {currentStep === 'vocabulary' && <VocabularyStep questions={selectedEpisode.vocab_quizzes} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('phrases'); }} />}
           {currentStep === 'phrases' && <KeyPhrasesInternal items={selectedEpisode.key_phrases} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('dictation'); }} />}
-          
           {currentStep === 'dictation' && <DictationStep script={selectedEpisode.script} items={selectedEpisode.dictation_items} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('reading'); }} />}
-          
           {currentStep === 'reading' && <ReadingStep slashScript={selectedEpisode.slash_script || selectedEpisode.script} japanese={selectedEpisode.japanese_translation || ""} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('overlapping'); }} />}
           {currentStep === 'overlapping' && <OverlappingInternal script={selectedEpisode.script} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('shadowing'); }} />}
           {currentStep === 'shadowing' && <ShadowingInternal script={selectedEpisode.script} rate={speechRate} onNext={() => { stopSpeech(); setCurrentStep('result'); }} />}
