@@ -12,8 +12,14 @@ import { CourseData } from '../types';
 export const courseData: CourseData = {
   course_title: "English Navigator",
   episodes: [
-    episode1, episode2, episode3, episode4,
-    episode5, episode6, episode7, episode8
+    episode1,
+    episode2,
+    episode3,
+    episode4,
+    episode5,
+    episode6,
+    episode7,
+    episode8
   ]
 };
 
