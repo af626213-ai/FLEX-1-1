@@ -11,7 +11,8 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
   const [spokenWords, setSpokenWords] = useState<string[]>([]);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [results, setResults] = useState({ accuracy: 0, wpm: 0 });
-  const [fontSize, setFontSize] = useState(24);
+  // デフォルトサイズを最小の 16px に設定
+  const [fontSize, setFontSize] = useState(16); 
   const [isModelPlaying, setIsModelPlaying] = useState(false);
   const recognitionRef = useRef<any>(null);
 
@@ -37,13 +38,11 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         const correctCount = targetWords.filter(w => transcript.includes(w)).length;
         const acc = Math.round((correctCount / targetWords.length) * 100);
         
-        // リアルタイムWPM計算（停止前）
         if (startTime && isListening) {
           const duration = (Date.now() - startTime) / 1000 / 60;
           const currentWpm = Math.round(spoken.length / duration);
           setResults({ accuracy: acc, wpm: currentWpm });
         } else if (!isListening) {
-          // 停止後はAccuracyのみ更新し、WPMは固定
           setResults(prev => ({ ...prev, accuracy: acc }));
         }
       };
@@ -70,11 +69,9 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
 
   const toggleListening = () => {
     if (isListening) {
-      // --- 停止時の処理 ---
       recognitionRef.current?.stop();
       setIsListening(false);
       
-      // 最終的なWPMを確定させる
       if (startTime) {
         const endTime = Date.now();
         const durationMinutes = (endTime - startTime) / 1000 / 60;
@@ -82,7 +79,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         setResults(prev => ({ ...prev, wpm: finalWpm }));
       }
     } else {
-      // --- 開始時の処理 ---
       window.speechSynthesis.cancel();
       setIsModelPlaying(false);
       setSpokenWords([]);
@@ -106,11 +102,11 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop px-2">
       <div className="flex gap-4 justify-center">
-        <div className="bg-cyan-500 text-white p-4 rounded-2xl shadow-lg w-32">
+        <div className="bg-cyan-500 text-white p-4 rounded-2xl shadow-lg w-32 text-center">
           <p className="text-[10px] font-black uppercase tracking-wider">Accuracy</p>
           <p className="text-3xl font-black">{results.accuracy}%</p>
         </div>
-        <div className="bg-rose-500 text-white p-4 rounded-2xl shadow-lg w-32">
+        <div className="bg-rose-500 text-white p-4 rounded-2xl shadow-lg w-32 text-center">
           <p className="text-[10px] font-black uppercase tracking-wider">WPM</p>
           <p className="text-3xl font-black">{results.wpm}</p>
         </div>
@@ -128,7 +124,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
             </button>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setFontSize(s => Math.max(16, s - 2))} className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200"><Minus size={16} /></button>
+            <button onClick={() => setFontSize(s => Math.max(12, s - 2))} className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200"><Minus size={16} /></button>
             <button onClick={() => setFontSize(s => Math.min(48, s + 2))} className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200"><Plus size={16} /></button>
           </div>
         </div>
@@ -156,7 +152,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         >
           {isListening ? <Square className="text-white" size={32} /> : <Mic className="text-white" size={32} />}
         </button>
-        <p className="text-slate-400 font-bold">{isListening ? "Listening... (停止ボタンを押して終了)" : "Tap to Start Reading"}</p>
+        <p className="text-slate-400 font-bold">{isListening ? "Listening..." : "Tap to Start Reading"}</p>
         
         <div className="flex gap-4 w-full pt-4">
           <button onClick={handleRetry} className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl flex items-center justify-center gap-2">
