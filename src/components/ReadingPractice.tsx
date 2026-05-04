@@ -41,7 +41,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         let wpm = 0;
         if (startTime) {
           const duration = (Date.now() - startTime) / 1000 / 60;
-          // 1分間あたりの発音単語数を計算
           wpm = Math.round(spoken.length / duration);
         }
         setResults({ accuracy: acc, wpm: wpm });
@@ -72,7 +71,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop px-2">
-      {/* スコア表示パネル */}
       <div className="flex gap-4 justify-center">
         <div className="bg-cyan-500 text-white p-4 rounded-2xl shadow-lg w-32">
           <p className="text-[10px] font-black uppercase tracking-wider">Accuracy</p>
@@ -84,7 +82,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
       </div>
 
-      {/* お手本テキスト表示 */}
       <div className="bg-white rounded-[32px] p-6 shadow-xl border-4 border-slate-100 text-left">
         <div className="flex justify-between items-center mb-4 border-b border-slate-50 pb-2">
           <p className="text-xs font-black text-cyan-500 uppercase tracking-widest">Target Text (お手本)</p>
@@ -95,14 +92,14 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
         
         <div 
-          className="leading-relaxed font-bold text-slate-800 break-words" 
+          className="leading-relaxed font-bold break-words" 
           style={{ fontSize: `${fontSize}px` }}
         >
           {script.split(/\s+/).map((word, i) => {
             const cleanWord = word.replace(/[.,!?"“”]/g, "").toLowerCase();
             const isMatch = spokenWords.includes(cleanWord);
             return (
-              <span key={i} className={`${isMatch ? 'text-cyan-500' : 'text-slate-300'} transition-colors duration-300 mr-2`}>
+              <span key={i} className={`${isMatch ? 'text-cyan-500' : 'text-slate-800'} transition-colors duration-300 mr-2`}>
                 {word}
               </span>
             );
@@ -110,7 +107,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
       </div>
 
-      {/* 操作エリア */}
       <div className="flex flex-col items-center gap-4">
         <button 
           onClick={toggleListening}
@@ -118,15 +114,15 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         >
           {isListening ? <Square className="text-white" size={32} /> : <Mic className="text-white" size={32} />}
         </button>
-        <p className="text-slate-400 font-bold">{isListening ? "Listening... (音読してください)" : "Tap to Start Reading"}</p>
+        <p className="text-slate-400 font-bold">{isListening ? "Listening..." : "Tap to Start Reading"}</p>
         
         <div className="flex gap-4 w-full pt-4">
-          <button onClick={handleRetry} className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors">
+          <button onClick={handleRetry} className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-200">
             <RotateCcw size={20} /> RETRY
           </button>
           <button 
             onClick={() => onNext(results.accuracy, results.wpm)}
-            className="flex-[2] py-4 bg-orange-500 text-white font-black rounded-2xl shadow-lg hover:bg-orange-600 transition-colors"
+            className="flex-[2] py-4 bg-orange-500 text-white font-black rounded-2xl shadow-lg hover:bg-orange-600"
           >
             成績提出 (GO NEXT)
           </button>
