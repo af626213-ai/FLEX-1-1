@@ -12,7 +12,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [results, setResults] = useState({ accuracy: 0, wpm: 0 });
   const [fontSize, setFontSize] = useState(24);
-  const [isModelPlaying, setIsModelPlaying] = useState(false); // お手本再生状態
+  const [isModelPlaying, setIsModelPlaying] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   const targetWords = script.replace(/[.,!?"“”]/g, "").toLowerCase().split(/\s+/);
@@ -37,19 +37,21 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         const correctCount = targetWords.filter(w => transcript.includes(w)).length;
         const acc = Math.round((correctCount / targetWords.length) * 100);
         
-        let wpm = 0;
-        if (startTime) {
+        // リアルタイムWPM計算（停止前）
+        if (startTime && isListening) {
           const duration = (Date.now() - startTime) / 1000 / 60;
-          wpm = Math.round(spoken.length / duration);
+          const currentWpm = Math.round(spoken.length / duration);
+          setResults({ accuracy: acc, wpm: currentWpm });
+        } else if (!isListening) {
+          // 停止後はAccuracyのみ更新し、WPMは固定
+          setResults(prev => ({ ...prev, accuracy: acc }));
         }
-        setResults({ accuracy: acc, wpm: wpm });
       };
 
       recognitionRef.current.onend = () => setIsListening(false);
     }
-  }, [startTime, targetWords]);
+  }, [startTime, targetWords, isListening]);
 
-  // お手本音声の再生
   const handlePlayModel = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -68,13 +70,24 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
 
   const toggleListening = () => {
     if (isListening) {
+      // --- 停止時の処理 ---
       recognitionRef.current?.stop();
+      setIsListening(false);
+      
+      // 最終的なWPMを確定させる
+      if (startTime) {
+        const endTime = Date.now();
+        const durationMinutes = (endTime - startTime) / 1000 / 60;
+        const finalWpm = Math.round(spokenWords.length / durationMinutes);
+        setResults(prev => ({ ...prev, wpm: finalWpm }));
+      }
     } else {
-      window.speechSynthesis.cancel(); // 録音開始時はお手本を止める
+      // --- 開始時の処理 ---
+      window.speechSynthesis.cancel();
       setIsModelPlaying(false);
       setSpokenWords([]);
-      setStartTime(Date.now());
       setResults({ accuracy: 0, wpm: 0 });
+      setStartTime(Date.now());
       recognitionRef.current?.start();
       setIsListening(true);
     }
@@ -87,6 +100,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
     window.speechSynthesis.cancel();
     setIsModelPlaying(false);
     if (isListening) recognitionRef.current?.stop();
+    setIsListening(false);
   };
 
   return (
@@ -142,10 +156,10 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         >
           {isListening ? <Square className="text-white" size={32} /> : <Mic className="text-white" size={32} />}
         </button>
-        <p className="text-slate-400 font-bold">{isListening ? "Listening..." : "Tap to Start Reading"}</p>
+        <p className="text-slate-400 font-bold">{isListening ? "Listening... (停止ボタンを押して終了)" : "Tap to Start Reading"}</p>
         
         <div className="flex gap-4 w-full pt-4">
-          <button onClick={handleRetry} className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-200">
+          <button onClick={handleRetry} className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl flex items-center justify-center gap-2">
             <RotateCcw size={20} /> RETRY
           </button>
           <button 
