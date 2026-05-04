@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Square, RotateCcw, Plus, Minus } from 'lucide-react';
+import { Mic, Square, RotateCcw, Plus, Minus, Volume2 } from 'lucide-react';
 
 interface ReadingPracticeProps {
   script: string;
@@ -12,9 +12,9 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [results, setResults] = useState({ accuracy: 0, wpm: 0 });
   const [fontSize, setFontSize] = useState(24);
+  const [isModelPlaying, setIsModelPlaying] = useState(false); // お手本再生状態
   const recognitionRef = useRef<any>(null);
 
-  // お手本の単語リスト（記号を除去して小文字化）
   const targetWords = script.replace(/[.,!?"“”]/g, "").toLowerCase().split(/\s+/);
 
   useEffect(() => {
@@ -34,7 +34,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         const spoken = transcript.split(/\s+/);
         setSpokenWords(spoken);
 
-        // 正解単語のカウント
         const correctCount = targetWords.filter(w => transcript.includes(w)).length;
         const acc = Math.round((correctCount / targetWords.length) * 100);
         
@@ -50,10 +49,29 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
     }
   }, [startTime, targetWords]);
 
+  // お手本音声の再生
+  const handlePlayModel = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      if (isModelPlaying) {
+        setIsModelPlaying(false);
+        return;
+      }
+      const u = new SpeechSynthesisUtterance(script);
+      u.lang = 'en-US';
+      u.rate = 1.0; 
+      u.onend = () => setIsModelPlaying(false);
+      window.speechSynthesis.speak(u);
+      setIsModelPlaying(true);
+    }
+  };
+
   const toggleListening = () => {
     if (isListening) {
       recognitionRef.current?.stop();
     } else {
+      window.speechSynthesis.cancel(); // 録音開始時はお手本を止める
+      setIsModelPlaying(false);
       setSpokenWords([]);
       setStartTime(Date.now());
       setResults({ accuracy: 0, wpm: 0 });
@@ -66,6 +84,8 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
     setSpokenWords([]);
     setResults({ accuracy: 0, wpm: 0 });
     setStartTime(null);
+    window.speechSynthesis.cancel();
+    setIsModelPlaying(false);
     if (isListening) recognitionRef.current?.stop();
   };
 
@@ -84,7 +104,15 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
 
       <div className="bg-white rounded-[32px] p-6 shadow-xl border-4 border-slate-100 text-left">
         <div className="flex justify-between items-center mb-4 border-b border-slate-50 pb-2">
-          <p className="text-xs font-black text-cyan-500 uppercase tracking-widest">Target Text (お手本)</p>
+          <div className="flex items-center gap-3">
+            <p className="text-xs font-black text-cyan-500 uppercase tracking-widest">Target Text</p>
+            <button 
+              onClick={handlePlayModel}
+              className={`p-2 rounded-full transition-all ${isModelPlaying ? 'bg-orange-500 text-white animate-pulse' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'}`}
+            >
+              <Volume2 size={18} />
+            </button>
+          </div>
           <div className="flex gap-2">
             <button onClick={() => setFontSize(s => Math.max(16, s - 2))} className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200"><Minus size={16} /></button>
             <button onClick={() => setFontSize(s => Math.min(48, s + 2))} className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200"><Plus size={16} /></button>
