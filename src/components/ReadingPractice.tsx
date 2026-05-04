@@ -9,10 +9,14 @@ interface ReadingPracticeProps {
 export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
   const [isListening, setIsListening] = useState(false);
   const [spokenWords, setSpokenWords] = useState<string[]>([]);
+  const [displayWords, setDisplayWords] = useState<string[]>([]); // 録音終了後に表示する用
   const [startTime, setStartTime] = useState<number | null>(null);
   const [results, setResults] = useState({ accuracy: 0, wpm: 0 });
-  // デフォルトサイズを最小の 16px に設定
-  const [fontSize, setFontSize] = useState(16); 
+  
+  // フォントサイズ設定（デフォルト最小）
+  const [targetFontSize, setTargetFontSize] = useState(12);
+  const [voiceFontSize, setVoiceFontSize] = useState(12);
+  
   const [isModelPlaying, setIsModelPlaying] = useState(false);
   const recognitionRef = useRef<any>(null);
 
@@ -42,8 +46,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
           const duration = (Date.now() - startTime) / 1000 / 60;
           const currentWpm = Math.round(spoken.length / duration);
           setResults({ accuracy: acc, wpm: currentWpm });
-        } else if (!isListening) {
-          setResults(prev => ({ ...prev, accuracy: acc }));
         }
       };
 
@@ -54,13 +56,9 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
   const handlePlayModel = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      if (isModelPlaying) {
-        setIsModelPlaying(false);
-        return;
-      }
+      if (isModelPlaying) { setIsModelPlaying(false); return; }
       const u = new SpeechSynthesisUtterance(script);
-      u.lang = 'en-US';
-      u.rate = 1.0; 
+      u.lang = 'en-US'; u.rate = 1.0; 
       u.onend = () => setIsModelPlaying(false);
       window.speechSynthesis.speak(u);
       setIsModelPlaying(true);
@@ -71,6 +69,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
+      setDisplayWords([...spokenWords]); // 停止時にテキストを一気に表示
       
       if (startTime) {
         const endTime = Date.now();
@@ -82,6 +81,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
       window.speechSynthesis.cancel();
       setIsModelPlaying(false);
       setSpokenWords([]);
+      setDisplayWords([]);
       setResults({ accuracy: 0, wpm: 0 });
       setStartTime(Date.now());
       recognitionRef.current?.start();
@@ -91,6 +91,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
 
   const handleRetry = () => {
     setSpokenWords([]);
+    setDisplayWords([]);
     setResults({ accuracy: 0, wpm: 0 });
     setStartTime(null);
     window.speechSynthesis.cancel();
@@ -100,68 +101,74 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop px-2">
+    <div className="max-w-3xl mx-auto space-y-4 animate-in fade-in duration-500 font-pop px-2 pb-10">
+      {/* スコアパネル */}
       <div className="flex gap-4 justify-center">
-        <div className="bg-cyan-500 text-white p-4 rounded-2xl shadow-lg w-32 text-center">
-          <p className="text-[10px] font-black uppercase tracking-wider">Accuracy</p>
-          <p className="text-3xl font-black">{results.accuracy}%</p>
+        <div className="bg-cyan-500 text-white p-3 rounded-xl shadow-lg w-28 text-center border-b-4 border-cyan-700">
+          <p className="text-[10px] font-black uppercase">Accuracy</p>
+          <p className="text-2xl font-black">{results.accuracy}%</p>
         </div>
-        <div className="bg-rose-500 text-white p-4 rounded-2xl shadow-lg w-32 text-center">
-          <p className="text-[10px] font-black uppercase tracking-wider">WPM</p>
-          <p className="text-3xl font-black">{results.wpm}</p>
+        <div className="bg-rose-500 text-white p-3 rounded-xl shadow-lg w-28 text-center border-b-4 border-rose-700">
+          <p className="text-[10px] font-black uppercase">WPM</p>
+          <p className="text-2xl font-black">{results.wpm}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-[32px] p-6 shadow-xl border-4 border-slate-100 text-left">
-        <div className="flex justify-between items-center mb-4 border-b border-slate-50 pb-2">
-          <div className="flex items-center gap-3">
-            <p className="text-xs font-black text-cyan-500 uppercase tracking-widest">Target Text</p>
-            <button 
-              onClick={handlePlayModel}
-              className={`p-2 rounded-full transition-all ${isModelPlaying ? 'bg-orange-500 text-white animate-pulse' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'}`}
-            >
-              <Volume2 size={18} />
+      {/* 上段：お手本枠 */}
+      <div className="bg-white rounded-3xl p-5 shadow-md border-2 border-slate-100 text-left relative">
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-black text-cyan-500 uppercase">Target Text (お手本)</p>
+            <button onClick={handlePlayModel} className={`p-1.5 rounded-full ${isModelPlaying ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-500'}`}>
+              <Volume2 size={14} />
             </button>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => setFontSize(s => Math.max(12, s - 2))} className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200"><Minus size={16} /></button>
-            <button onClick={() => setFontSize(s => Math.min(48, s + 2))} className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200"><Plus size={16} /></button>
+          <div className="flex gap-1">
+            <button onClick={() => setTargetFontSize(s => Math.max(12, s - 2))} className="p-1.5 bg-slate-50 rounded text-slate-400"><Minus size={12} /></button>
+            <button onClick={() => setTargetFontSize(s => Math.min(40, s + 2))} className="p-1.5 bg-slate-50 rounded text-slate-400"><Plus size={12} /></button>
           </div>
         </div>
-        
-        <div 
-          className="leading-relaxed font-bold break-words" 
-          style={{ fontSize: `${fontSize}px` }}
-        >
-          {script.split(/\s+/).map((word, i) => {
-            const cleanWord = word.replace(/[.,!?"“”]/g, "").toLowerCase();
-            const isMatch = spokenWords.includes(cleanWord);
-            return (
-              <span key={i} className={`${isMatch ? 'text-cyan-500' : 'text-slate-800'} transition-colors duration-300 mr-2`}>
-                {word}
-              </span>
-            );
-          })}
+        <div className="font-bold text-slate-800 break-words leading-relaxed" style={{ fontSize: `${targetFontSize}px` }}>
+          {script}
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        <button 
-          onClick={toggleListening}
-          className={`w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90 ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-cyan-500'}`}
-        >
-          {isListening ? <Square className="text-white" size={32} /> : <Mic className="text-white" size={32} />}
+      {/* 下段：あなたの発音枠 */}
+      <div className="bg-rose-50/50 rounded-3xl p-5 shadow-md border-2 border-rose-100 text-left min-h-[120px] relative">
+        <div className="flex justify-between items-center mb-2">
+          <p className="text-[10px] font-black text-rose-500 uppercase">Your Voice (あなたの発音)</p>
+          <div className="flex gap-1">
+            <button onClick={() => setVoiceFontSize(s => Math.max(12, s - 2))} className="p-1.5 bg-white rounded text-rose-300"><Minus size={12} /></button>
+            <button onClick={() => setVoiceFontSize(s => Math.min(40, s + 2))} className="p-1.5 bg-white rounded text-rose-300"><Plus size={12} /></button>
+          </div>
+        </div>
+        <div className="font-bold break-words leading-relaxed" style={{ fontSize: `${voiceFontSize}px` }}>
+          {displayWords.length > 0 ? (
+            displayWords.map((word, i) => {
+              const isMatch = targetWords.includes(word.replace(/[.,!?"“”]/g, "").toLowerCase());
+              return (
+                <span key={i} className={`${isMatch ? 'text-cyan-500' : 'text-slate-400'} mr-1.5`}>
+                  {word}
+                </span>
+              );
+            })
+          ) : (
+            <span className="text-rose-200 italic text-sm">Waiting for voice input...</span>
+          )}
+        </div>
+      </div>
+
+      {/* コントロール */}
+      <div className="flex flex-col items-center gap-4 pt-2">
+        <button onClick={toggleListening} className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition-all ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-cyan-500'}`}>
+          {isListening ? <Square className="text-white" size={28} /> : <Mic className="text-white" size={28} />}
         </button>
-        <p className="text-slate-400 font-bold">{isListening ? "Listening..." : "Tap to Start Reading"}</p>
         
-        <div className="flex gap-4 w-full pt-4">
-          <button onClick={handleRetry} className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl flex items-center justify-center gap-2">
-            <RotateCcw size={20} /> RETRY
+        <div className="flex gap-3 w-full max-w-sm">
+          <button onClick={handleRetry} className="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-500 font-black rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm">
+            <RotateCcw size={16} /> RETRY
           </button>
-          <button 
-            onClick={() => onNext(results.accuracy, results.wpm)}
-            className="flex-[2] py-4 bg-orange-500 text-white font-black rounded-2xl shadow-lg hover:bg-orange-600"
-          >
+          <button onClick={() => onNext(results.accuracy, results.wpm)} className="flex-[2] py-3 bg-rose-500 text-white font-black rounded-xl text-sm shadow-lg border-b-4 border-rose-700 active:border-b-0 active:translate-y-1 transition-all">
             成績提出 (GO NEXT)
           </button>
         </div>
