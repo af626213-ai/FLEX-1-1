@@ -13,6 +13,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [results, setResults] = useState({ accuracy: 0, wpm: 0 });
   
+  // デフォルト最小サイズ
   const [targetFontSize, setTargetFontSize] = useState(12);
   const [voiceFontSize, setVoiceFontSize] = useState(12);
   
@@ -35,22 +36,19 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
           .join(" ")
           .toLowerCase();
         
-        // 認識結果が空（またはスペースのみ）の場合は処理をスキップしてリセットを防ぐ
         const currentWords = transcript.split(/\s+/).filter(w => w.length > 0);
-        if (currentWords.length === 0) return;
+        if (currentWords.length === 0) return; // リセット防止ガード
 
         setSpokenTranscript(transcript);
 
-        // Accuracy計算
+        // Accuracy計算 (お手本ベース)
         const correctCount = targetWords.filter(w => transcript.includes(w)).length;
         const acc = targetWords.length > 0 ? Math.round((correctCount / targetWords.length) * 100) : 0;
         
-        // WPM計算
+        // WPM計算 (リセット防止)
         let currentWpm = 0;
         if (startTime && isListening) {
-          const now = Date.now();
-          const durationSeconds = (now - startTime) / 1000;
-          
+          const durationSeconds = (Date.now() - startTime) / 1000;
           if (durationSeconds > 0.5) {
             const durationMinutes = durationSeconds / 60;
             currentWpm = Math.round(currentWords.length / durationMinutes);
@@ -59,7 +57,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         
         setResults(prev => ({
           accuracy: acc,
-          // もし新しいWPMが0なら、前の値を保持する（リセット防止ガード）
           wpm: currentWpm > 0 ? currentWpm : prev.wpm
         }));
       };
@@ -68,12 +65,23 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
     }
   }, [startTime, targetWords, isListening]);
 
+  const handlePlayModel = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      if (isModelPlaying) { setIsModelPlaying(false); return; }
+      const u = new SpeechSynthesisUtterance(script);
+      u.lang = 'en-US'; u.rate = 1.0; 
+      u.onend = () => setIsModelPlaying(false);
+      window.speechSynthesis.speak(u);
+      setIsModelPlaying(true);
+    }
+  };
+
   const toggleListening = () => {
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
       
-      // 停止時の最終スコアを再計算して固定
       if (startTime && spokenTranscript) {
         const finalWords = spokenTranscript.split(/\s+/).filter(w => w.length > 0);
         const durationMinutes = (Date.now() - startTime) / 1000 / 60;
@@ -82,7 +90,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
           setResults(prev => ({ ...prev, wpm: finalWpm }));
         }
       }
-      
       setDisplayWords(spokenTranscript.split(/\s+/).filter(w => w.length > 0));
     } else {
       window.speechSynthesis.cancel();
@@ -107,18 +114,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
     setIsListening(false);
   };
 
-  const handlePlayModel = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      if (isModelPlaying) { setIsModelPlaying(false); return; }
-      const u = new SpeechSynthesisUtterance(script);
-      u.lang = 'en-US'; u.rate = 1.0; 
-      u.onend = () => setIsModelPlaying(false);
-      window.speechSynthesis.speak(u);
-      setIsModelPlaying(true);
-    }
-  };
-
   return (
     <div className="max-w-3xl mx-auto space-y-4 animate-in fade-in duration-500 font-pop px-2 pb-10">
       <div className="flex gap-4 justify-center">
@@ -132,11 +127,12 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
       </div>
 
+      {/* お手本枠 */}
       <div className="bg-white rounded-3xl p-5 shadow-md border-2 border-slate-100 text-left relative">
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-2">
             <p className="text-[10px] font-black text-cyan-500 uppercase">Target Text</p>
-            <button onClick={handlePlayModel} className={`p-1.5 rounded-full ${isModelPlaying ? 'bg-orange-500 text-white animate-pulse' : 'bg-orange-100 text-orange-500'}`}>
+            <button onClick={handlePlayModel} className={`p-1.5 rounded-full ${isModelPlaying ? 'bg-orange-500 text-white animate-pulse' : 'bg-orange-50 text-orange-500'}`}>
               <Volume2 size={14} />
             </button>
           </div>
@@ -150,6 +146,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
       </div>
 
+      {/* あなたの発音枠 */}
       <div className="bg-rose-50/50 rounded-3xl p-5 shadow-md border-2 border-rose-100 text-left min-h-[120px] relative">
         <div className="flex justify-between items-center mb-2">
           <p className="text-[10px] font-black text-rose-500 uppercase">Your Voice</p>
@@ -177,15 +174,25 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
       </div>
 
+      {/* オレンジ配色のボタン */}
       <div className="flex flex-col items-center gap-4 pt-2">
-        <button onClick={toggleListening} className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition-all active:scale-95 ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-cyan-500'}`}>
+        <button 
+          onClick={toggleListening} 
+          className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition-all active:scale-95 ${
+            isListening ? 'bg-rose-500 animate-pulse' : 'bg-orange-500 hover:bg-orange-600'
+          }`}
+        >
           {isListening ? <Square className="text-white" size={28} /> : <Mic className="text-white" size={28} />}
         </button>
+        
         <div className="flex gap-3 w-full max-w-sm">
-          <button onClick={handleRetry} className="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-500 font-black rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm hover:bg-slate-50">
+          <button onClick={handleRetry} className="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-500 font-black rounded-xl text-sm flex items-center justify-center gap-2">
             <RotateCcw size={16} /> RETRY
           </button>
-          <button onClick={() => onNext(results.accuracy, results.wpm)} className="flex-[2] py-3 bg-rose-500 text-white font-black rounded-xl text-sm shadow-lg border-b-4 border-rose-700 active:border-b-0 active:translate-y-1 transition-all">
+          <button 
+            onClick={() => onNext(results.accuracy, results.wpm)} 
+            className="flex-[2] py-3 bg-orange-500 text-white font-black rounded-xl text-sm shadow-lg border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all"
+          >
             成績提出 (GO NEXT)
           </button>
         </div>
