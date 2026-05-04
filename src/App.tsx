@@ -126,7 +126,6 @@ const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: num
 export default function App() {
   const [currentStep, setCurrentStep] = useState<'menu' | 'listening' | 'quiz' | 'vocabulary' | 'phrases' | 'dictation' | 'reading' | 'overlapping' | 'shadowing' | 'result'>('menu');
   const [selectedLesson, setSelectedLesson] = useState<number>(1);
-  const [selectedPart, setSelectedPart] = useState<number>(1);
   const [selectedEpisode, setSelectedEpisode] = useState<Episode>(courseData.episodes[0]);
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
   const [speechRate, setSpeechRate] = useState<number>(1.0); 
@@ -146,7 +145,7 @@ export default function App() {
 
   useEffect(() => {
     if (currentStep === 'result') {
-      const finishAudio = new Audio('/finish.mp3'); finishAudio.volume = 0.5; finishAudio.play().catch(() => {});
+      const f = new Audio('/finish.mp3'); f.volume = 0.5; f.play().catch(() => {});
     }
   }, [currentStep]);
 
@@ -156,94 +155,87 @@ export default function App() {
     setIsBgmPlaying(!isBgmPlaying); 
   };
 
-  const handleStart = (epId?: number) => {
-    const id = epId || (selectedLesson - 1) * 3 + selectedPart;
-    const ep = courseData.episodes.find(e => e.id === id);
-    if (ep) {
-      stopSpeech();
-      setSelectedEpisode(ep);
-      setCurrentStep('listening');
-    }
+  const handleStart = (ep: Episode) => {
+    stopSpeech();
+    setSelectedEpisode(ep);
+    setCurrentStep('listening');
   };
 
-  const renderLessonSection = (lessonNum: number, startId: number, endId: number) => (
-    <section className="space-y-6 text-left">
-      <div className="flex items-center gap-4 px-2">
-        <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-          <span className="bg-orange-500 text-white px-4 py-1.5 rounded-xl shadow-sm whitespace-nowrap">Lesson {lessonNum}</span>
-        </h3>
-        <div className="h-1 bg-slate-200 flex-1 rounded-full" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {courseData.episodes.filter(ep => ep.id >= startId && ep.id <= endId).map((ep, idx) => (
-          <div key={ep.id} onClick={() => handleStart(ep.id)} className="group relative bg-white rounded-[32px] p-6 border-4 border-slate-100 hover:border-orange-400 cursor-pointer transition-all shadow-sm hover:shadow-2xl hover:-translate-y-1 overflow-hidden">
-            <div className="absolute -right-4 -bottom-6 text-9xl font-black text-slate-50 group-hover:text-orange-50 transition-colors pointer-events-none">{idx + 1}</div>
-            <div className="relative z-10 flex items-center gap-5 text-left">
-              <div className="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-xl shadow-lg group-hover:scale-110 transition-transform">P{idx + 1}</div>
-              <div className="flex-1">
-                <p className="text-xs font-black text-orange-400 uppercase tracking-widest mb-1">Part {idx + 1}</p>
-                <h3 className="text-lg md:text-xl font-black text-slate-800 leading-tight group-hover:text-orange-600 transition-colors">{ep.title}</h3>
-              </div>
-              <Play className="text-slate-300 group-hover:text-orange-500" size={20} fill="currentColor" />
+  const renderMainMenu = () => {
+    // 選択されたLessonのPart（1〜3）を抽出
+    const startId = (selectedLesson - 1) * 3 + 1;
+    const endId = startId + 2;
+    const filteredEpisodes = courseData.episodes.filter(ep => ep.id >= startId && ep.id <= endId);
+
+    return (
+      <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        {/* ヘッダーセクション */}
+        <div className="text-center py-12 bg-gradient-to-b from-orange-50 to-white rounded-[60px] border-4 border-orange-100 shadow-inner relative overflow-hidden">
+          <h2 className="text-5xl md:text-6xl font-black text-orange-700 leading-none tracking-tighter relative z-10">
+            English<br /><span className="text-orange-500">Navigator</span>
+          </h2>
+          
+          {/* Lesson選択プルダウン */}
+          <div className="mt-8 flex flex-col items-center gap-2 relative z-10 px-6">
+            <label className="text-xs font-black text-orange-400 uppercase tracking-widest">Select Your Lesson</label>
+            <div className="relative w-full max-w-xs">
+              <select 
+                value={selectedLesson} 
+                onChange={(e) => setSelectedLesson(Number(e.target.value))}
+                className="w-full p-4 bg-white border-4 border-orange-100 rounded-3xl font-black text-slate-700 appearance-none focus:border-orange-400 outline-none shadow-lg cursor-pointer"
+              >
+                <option value={1}>Lesson 1: How Can We Become Stronger?</option>
+                <option value={2}>Lesson 2: The Jar of Life</option>
+              </select>
+              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-orange-400 pointer-events-none" size={24} />
             </div>
           </div>
-        ))}
-      </div>
-    </section>
-  );
+        </div>
 
-  const renderMainMenu = () => (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <div className="text-center py-12 bg-gradient-to-b from-orange-50 to-white rounded-[60px] border-4 border-orange-100 shadow-inner relative overflow-hidden">
-        <h2 className="text-6xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
-        
-        <div className="mt-8 flex flex-col items-center gap-6 relative z-10 px-6">
-          <div className="flex flex-col md:flex-row gap-4 w-full max-w-lg">
-            <div className="flex-1 space-y-2">
-              <label className="text-xs font-black text-orange-400 uppercase tracking-widest block text-left ml-2">Select Lesson</label>
-              <div className="relative">
-                <select value={selectedLesson} onChange={(e) => setSelectedLesson(Number(e.target.value))} className="w-full p-4 bg-white border-2 border-slate-100 rounded-2xl font-black text-slate-700 appearance-none focus:border-orange-400 outline-none shadow-sm">
-                  <option value={1}>Lesson 1</option>
-                  <option value={2}>Lesson 2</option>
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+        {/* Partカードリスト表示 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {filteredEpisodes.map((ep, idx) => (
+            <div 
+              key={ep.id} 
+              onClick={() => handleStart(ep)} 
+              className="group bg-white rounded-[32px] p-8 border-4 border-slate-100 hover:border-orange-400 cursor-pointer transition-all shadow-sm hover:shadow-2xl hover:-translate-y-2 relative overflow-hidden flex flex-col items-center text-center gap-4"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-2xl shadow-lg group-hover:scale-110 transition-transform">
+                P{idx + 1}
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-black text-orange-400 uppercase tracking-widest">Part {idx + 1}</p>
+                <h3 className="text-lg font-black text-slate-800 leading-tight group-hover:text-orange-600 transition-colors">
+                  {ep.title}
+                </h3>
+              </div>
+              <div className="mt-2 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                <Play className="text-slate-300 group-hover:text-orange-500 translate-x-0.5" size={18} fill="currentColor" />
               </div>
             </div>
-            <div className="flex-1 space-y-2">
-              <label className="text-xs font-black text-orange-400 uppercase tracking-widest block text-left ml-2">Select Part</label>
-              <div className="relative">
-                <select value={selectedPart} onChange={(e) => setSelectedPart(Number(e.target.value))} className="w-full p-4 bg-white border-2 border-slate-100 rounded-2xl font-black text-slate-700 appearance-none focus:border-orange-400 outline-none shadow-sm">
-                  <option value={1}>Part 1</option>
-                  <option value={2}>Part 2</option>
-                  <option value={3}>Part 3</option>
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
-              </div>
-            </div>
-          </div>
-          <button onClick={() => handleStart()} className="w-full max-w-lg py-5 bg-orange-500 text-white font-black text-2xl rounded-[24px] shadow-xl hover:bg-orange-600 active:scale-95 transition-all flex items-center justify-center gap-3">
-            <Play fill="currentColor" /> START LESSON
-          </button>
-        </div>
-      </div>
-
-      <div className="space-y-16">
-        {renderLessonSection(1, 1, 3)}
-        {renderLessonSection(2, 4, 6)}
-      </div>
-
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest">
-          <Zap size={14} className="text-orange-400" /> Speed Control
-        </div>
-        <div className="bg-white p-1.5 rounded-2xl shadow-md border-2 border-orange-100 flex gap-1">
-          {[0.6, 0.8, 1.0, 1.1].map((rate) => (
-            <button key={rate} onClick={() => setSpeechRate(rate)} className={`px-4 py-2 min-w-[50px] rounded-xl font-black text-sm transition-all ${speechRate === rate ? 'bg-orange-500 text-white shadow-inner' : 'text-slate-400 hover:bg-orange-50'}`}>{rate.toFixed(1)}x</button>
           ))}
         </div>
+
+        {/* スピードコントロール */}
+        <div className="flex flex-col items-center gap-3 py-6">
+          <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest">
+            <Zap size={14} className="text-orange-400" /> Speed Control
+          </div>
+          <div className="bg-white p-1.5 rounded-2xl shadow-md border-2 border-orange-100 flex gap-1">
+            {[0.6, 0.8, 1.0, 1.1].map((rate) => (
+              <button 
+                key={rate} 
+                onClick={() => setSpeechRate(rate)} 
+                className={`px-4 py-2 min-w-[50px] rounded-xl font-black text-sm transition-all ${speechRate === rate ? 'bg-orange-500 text-white shadow-inner' : 'text-slate-400 hover:bg-orange-50'}`}
+              >
+                {rate.toFixed(1)}x
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-pop">
@@ -261,7 +253,7 @@ export default function App() {
       )}
 
       <main className="flex-1 p-6 text-center">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {currentStep === 'menu' && renderMainMenu()}
           {currentStep === 'listening' && <ListeningStep script={selectedEpisode.script} rate={speechRate} onNext={() => setCurrentStep('quiz')} />}
           {currentStep === 'quiz' && <QuizStep quizzes={selectedEpisode.quizzes} onNext={() => setCurrentStep('vocabulary')} />}
