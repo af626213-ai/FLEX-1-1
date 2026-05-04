@@ -35,63 +35,62 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
           .join(" ")
           .toLowerCase();
         
+        // 認識結果が空（またはスペースのみ）の場合は処理をスキップしてリセットを防ぐ
+        const currentWords = transcript.split(/\s+/).filter(w => w.length > 0);
+        if (currentWords.length === 0) return;
+
         setSpokenTranscript(transcript);
 
-        // Accuracy計算 (お手本ベース)
+        // Accuracy計算
         const correctCount = targetWords.filter(w => transcript.includes(w)).length;
         const acc = targetWords.length > 0 ? Math.round((correctCount / targetWords.length) * 100) : 0;
         
-        // --- WPM計算ロジックの強化 ---
+        // WPM計算
         let currentWpm = 0;
-        if (startTime) {
+        if (startTime && isListening) {
           const now = Date.now();
           const durationSeconds = (now - startTime) / 1000;
-          const currentWordsCount = transcript.split(/\s+/).filter(w => w.length > 0).length;
           
-          if (durationSeconds > 0.5) { // 0.5秒以上で計算開始
+          if (durationSeconds > 0.5) {
             const durationMinutes = durationSeconds / 60;
-            currentWpm = Math.round(currentWordsCount / durationMinutes);
+            currentWpm = Math.round(currentWords.length / durationMinutes);
           }
         }
         
-        setResults({ accuracy: acc, wpm: currentWpm });
+        setResults(prev => ({
+          accuracy: acc,
+          // もし新しいWPMが0なら、前の値を保持する（リセット防止ガード）
+          wpm: currentWpm > 0 ? currentWpm : prev.wpm
+        }));
       };
 
       recognitionRef.current.onend = () => setIsListening(false);
     }
-  }, [startTime, targetWords]); // startTimeが変わるたびにエフェクトをリセット
+  }, [startTime, targetWords, isListening]);
 
   const toggleListening = () => {
     if (isListening) {
-      // --- 停止時の最終計算 ---
       recognitionRef.current?.stop();
       setIsListening(false);
       
-      if (startTime) {
-        const endTime = Date.now();
-        const durationSeconds = (endTime - startTime) / 1000;
-        const durationMinutes = durationSeconds / 60;
-        const finalWordsCount = spokenTranscript.split(/\s+/).filter(w => w.length > 0).length;
-        
-        if (durationSeconds > 0) {
-          const finalWpm = Math.round(finalWordsCount / durationMinutes);
+      // 停止時の最終スコアを再計算して固定
+      if (startTime && spokenTranscript) {
+        const finalWords = spokenTranscript.split(/\s+/).filter(w => w.length > 0);
+        const durationMinutes = (Date.now() - startTime) / 1000 / 60;
+        if (durationMinutes > 0 && finalWords.length > 0) {
+          const finalWpm = Math.round(finalWords.length / durationMinutes);
           setResults(prev => ({ ...prev, wpm: finalWpm }));
         }
       }
       
       setDisplayWords(spokenTranscript.split(/\s+/).filter(w => w.length > 0));
     } else {
-      // --- 開始時の初期化 ---
       window.speechSynthesis.cancel();
       setIsModelPlaying(false);
       setSpokenTranscript("");
       setDisplayWords([]);
       setResults({ accuracy: 0, wpm: 0 });
-      
-      // startTimeを確実にセットしてから開始
-      const now = Date.now();
-      setStartTime(now);
-      
+      setStartTime(Date.now());
       recognitionRef.current?.start();
       setIsListening(true);
     }
@@ -122,7 +121,6 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-4 animate-in fade-in duration-500 font-pop px-2 pb-10">
-      {/* スコア表示パネル */}
       <div className="flex gap-4 justify-center">
         <div className="bg-cyan-500 text-white p-3 rounded-xl shadow-lg w-28 text-center border-b-4 border-cyan-700">
           <p className="text-[10px] font-black uppercase tracking-widest">Accuracy</p>
@@ -134,11 +132,10 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
       </div>
 
-      {/* お手本枠 */}
       <div className="bg-white rounded-3xl p-5 shadow-md border-2 border-slate-100 text-left relative">
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-2">
-            <p className="text-[10px] font-black text-cyan-500 uppercase">Target Text (お手本)</p>
+            <p className="text-[10px] font-black text-cyan-500 uppercase">Target Text</p>
             <button onClick={handlePlayModel} className={`p-1.5 rounded-full ${isModelPlaying ? 'bg-orange-500 text-white animate-pulse' : 'bg-orange-100 text-orange-500'}`}>
               <Volume2 size={14} />
             </button>
@@ -153,10 +150,9 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
       </div>
 
-      {/* あなたの発音枠 */}
       <div className="bg-rose-50/50 rounded-3xl p-5 shadow-md border-2 border-rose-100 text-left min-h-[120px] relative">
         <div className="flex justify-between items-center mb-2">
-          <p className="text-[10px] font-black text-rose-500 uppercase">Your Voice (あなたの発音)</p>
+          <p className="text-[10px] font-black text-rose-500 uppercase">Your Voice</p>
           <div className="flex gap-1">
             <button onClick={() => setVoiceFontSize(s => Math.max(10, s - 2))} className="p-1.5 bg-white rounded text-rose-300"><Minus size={12} /></button>
             <button onClick={() => setVoiceFontSize(s => Math.min(48, s + 2))} className="p-1.5 bg-white rounded text-rose-300"><Plus size={12} /></button>
@@ -186,7 +182,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
           {isListening ? <Square className="text-white" size={28} /> : <Mic className="text-white" size={28} />}
         </button>
         <div className="flex gap-3 w-full max-w-sm">
-          <button onClick={handleRetry} className="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-500 font-black rounded-xl text-sm flex items-center justify-center gap-2">
+          <button onClick={handleRetry} className="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-500 font-black rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm hover:bg-slate-50">
             <RotateCcw size={16} /> RETRY
           </button>
           <button onClick={() => onNext(results.accuracy, results.wpm)} className="flex-[2] py-3 bg-rose-500 text-white font-black rounded-xl text-sm shadow-lg border-b-4 border-rose-700 active:border-b-0 active:translate-y-1 transition-all">
