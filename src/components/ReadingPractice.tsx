@@ -19,12 +19,9 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
   const [isModelPlaying, setIsModelPlaying] = useState(false);
   const recognitionRef = useRef<any>(null);
 
-  // 判定用のお手本単語リスト（小文字・記号なし）
-  const targetWords = script
-    .toLowerCase()
-    .replace(/[.,!?"“”()]/g, "")
-    .split(/\s+/)
-    .filter(w => w.length > 0);
+  // 判定基準となるお手本リスト（小文字・記号なしに正規化）
+  const getCleanWord = (word: string) => word.replace(/[.,!?"“”()]/g, "").toLowerCase().trim();
+  const targetWords = script.split(/\s+/).map(getCleanWord).filter(w => w.length > 0);
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -35,37 +32,42 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
       recognitionRef.current.lang = 'en-US';
 
       recognitionRef.current.onresult = (event: any) => {
-        const transcript = Array.from(event.results)
+        // 全ての認識結果を一つの配列にまとめる
+        const currentTranscript = Array.from(event.results)
           .map((result: any) => result[0].transcript)
-          .join(" ")
-          .toLowerCase();
+          .join(" ");
         
-        // 入力された発話を単語ごとに分解
-        const currentSpoken = transcript.split(/\s+/).filter(w => w.length > 0);
-        setSpokenWords(currentSpoken);
+        // 単語リストに分解
+        const currentSpokenRaw = currentTranscript.split(/\s+/).filter(w => w.length > 0);
+        setSpokenWords(currentSpokenRaw);
 
-        // --- Accuracy計算ロジックの変更 ---
-        // 「自分の発話した単語」のうち、いくつがお手本に含まれているか（青色の数）を数える
-        const blueWordsCount = currentSpoken.filter(word => {
-          const cleanWord = word.replace(/[.,!?"“”()]/g, "");
+        // --- 判定ロジックを同期 ---
+        // 自分の発話リスト（currentSpokenRaw）を一つずつ正規化してお手本に含まれるかチェック
+        const matchedIndices = currentSpokenRaw.filter(word => {
+          const cleanWord = getCleanWord(word);
           return targetWords.includes(cleanWord);
-        }).length;
+        });
 
-        // 自分の発話総数に対する青色単語の割合
-        const acc = currentSpoken.length > 0 
-          ? Math.round((blueWordsCount / currentSpoken.length) * 100) 
+        const blueWordsCount = matchedIndices.length;
+        
+        // 発話数があればAccuracyを計算
+        const acc = currentSpokenRaw.length > 0 
+          ? Math.round((blueWordsCount / currentSpokenRaw.length) * 100) 
           : 0;
         
         if (startTime && isListening) {
           const duration = (Date.now() - startTime) / 1000 / 60;
-          const currentWpm = duration > 0 ? Math.round(currentSpoken.length / duration) : 0;
+          const currentWpm = duration > 0 ? Math.round(currentSpokenRaw.length / duration) : 0;
+          
+          // ステートを一括更新
           setResults({ accuracy: acc, wpm: currentWpm });
         }
       };
 
       recognitionRef.current.onend = () => setIsListening(false);
+      recognitionRef.current.onerror = () => setIsListening(false);
     }
-  }, [startTime, targetWords, isListening]);
+  }, [startTime, isListening, targetWords]);
 
   const handlePlayModel = () => {
     if ('speechSynthesis' in window) {
@@ -86,8 +88,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
       setDisplayWords([...spokenWords]);
       
       if (startTime) {
-        const endTime = Date.now();
-        const durationMinutes = (endTime - startTime) / 1000 / 60;
+        const durationMinutes = (Date.now() - startTime) / 1000 / 60;
         const finalWpm = durationMinutes > 0 ? Math.round(spokenWords.length / durationMinutes) : 0;
         setResults(prev => ({ ...prev, wpm: finalWpm }));
       }
@@ -119,11 +120,11 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
       {/* スコアパネル */}
       <div className="flex gap-4 justify-center">
         <div className="bg-cyan-500 text-white p-3 rounded-xl shadow-lg w-28 text-center border-b-4 border-cyan-700">
-          <p className="text-[10px] font-black uppercase">Accuracy</p>
+          <p className="text-[10px] font-black uppercase tracking-widest">Accuracy</p>
           <p className="text-2xl font-black">{results.accuracy}%</p>
         </div>
         <div className="bg-rose-500 text-white p-3 rounded-xl shadow-lg w-28 text-center border-b-4 border-rose-700">
-          <p className="text-[10px] font-black uppercase">WPM</p>
+          <p className="text-[10px] font-black uppercase tracking-widest">WPM</p>
           <p className="text-2xl font-black">{results.wpm}</p>
         </div>
       </div>
@@ -133,13 +134,13 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-2">
             <p className="text-[10px] font-black text-cyan-500 uppercase">Target Text (お手本)</p>
-            <button onClick={handlePlayModel} className={`p-1.5 rounded-full ${isModelPlaying ? 'bg-orange-500 text-white animate-pulse' : 'bg-orange-50 text-orange-500'}`}>
+            <button onClick={handlePlayModel} className={`p-1.5 rounded-full transition-colors ${isModelPlaying ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-500'}`}>
               <Volume2 size={14} />
             </button>
           </div>
           <div className="flex gap-1">
-            <button onClick={() => setTargetFontSize(s => Math.max(10, s - 2))} className="p-1.5 bg-slate-50 rounded text-slate-400"><Minus size={12} /></button>
-            <button onClick={() => setTargetFontSize(s => Math.min(48, s + 2))} className="p-1.5 bg-slate-50 rounded text-slate-400"><Plus size={12} /></button>
+            <button onClick={() => setTargetFontSize(s => Math.max(10, s - 2))} className="p-1.5 bg-slate-50 rounded text-slate-400 hover:bg-slate-100"><Minus size={12} /></button>
+            <button onClick={() => setTargetFontSize(s => Math.min(48, s + 2))} className="p-1.5 bg-slate-50 rounded text-slate-400 hover:bg-slate-100"><Plus size={12} /></button>
           </div>
         </div>
         <div className="font-bold text-slate-800 break-words leading-relaxed" style={{ fontSize: `${targetFontSize}px` }}>
@@ -152,14 +153,14 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         <div className="flex justify-between items-center mb-2">
           <p className="text-[10px] font-black text-rose-500 uppercase">Your Voice (あなたの発音)</p>
           <div className="flex gap-1">
-            <button onClick={() => setVoiceFontSize(s => Math.max(10, s - 2))} className="p-1.5 bg-white rounded text-rose-300"><Minus size={12} /></button>
-            <button onClick={() => setVoiceFontSize(s => Math.min(48, s + 2))} className="p-1.5 bg-white rounded text-rose-300"><Plus size={12} /></button>
+            <button onClick={() => setVoiceFontSize(s => Math.max(10, s - 2))} className="p-1.5 bg-white rounded text-rose-300 hover:bg-rose-100"><Minus size={12} /></button>
+            <button onClick={() => setVoiceFontSize(s => Math.min(48, s + 2))} className="p-1.5 bg-white rounded text-rose-300 hover:bg-rose-100"><Plus size={12} /></button>
           </div>
         </div>
         <div className="font-bold break-words leading-relaxed" style={{ fontSize: `${voiceFontSize}px` }}>
           {displayWords.length > 0 ? (
             displayWords.map((word, i) => {
-              const cleanWord = word.replace(/[.,!?"“”()]/g, "").toLowerCase();
+              const cleanWord = getCleanWord(word);
               const isMatch = targetWords.includes(cleanWord);
               return (
                 <span key={i} className={`${isMatch ? 'text-cyan-500' : 'text-slate-400'} mr-1.5`}>
@@ -173,8 +174,12 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
       </div>
 
+      {/* コントロールエリア */}
       <div className="flex flex-col items-center gap-4 pt-2">
-        <button onClick={toggleListening} className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition-all active:scale-95 ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-cyan-500'}`}>
+        <button 
+          onClick={toggleListening} 
+          className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition-all active:scale-95 ${isListening ? 'bg-rose-500 animate-pulse' : 'bg-cyan-500'}`}
+        >
           {isListening ? <Square className="text-white" size={28} /> : <Mic className="text-white" size={28} />}
         </button>
         
@@ -182,7 +187,10 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
           <button onClick={handleRetry} className="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-500 font-black rounded-xl text-sm flex items-center justify-center gap-2">
             <RotateCcw size={16} /> RETRY
           </button>
-          <button onClick={() => onNext(results.accuracy, results.wpm)} className="flex-[2] py-3 bg-rose-500 text-white font-black rounded-xl text-sm shadow-lg border-b-4 border-rose-700 active:border-b-0 active:translate-y-1 transition-all">
+          <button 
+            onClick={() => onNext(results.accuracy, results.wpm)} 
+            className="flex-[2] py-3 bg-rose-500 text-white font-black rounded-xl text-sm shadow-lg border-b-4 border-rose-700 active:border-b-0 active:translate-y-1 transition-all"
+          >
             成績提出 (GO NEXT)
           </button>
         </div>
