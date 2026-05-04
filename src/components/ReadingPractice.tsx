@@ -37,18 +37,19 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         
         setSpokenTranscript(transcript);
 
-        // --- Accuracyの計算 (お手本ベース) ---
+        // Accuracy計算 (お手本ベース)
         const correctCount = targetWords.filter(w => transcript.includes(w)).length;
         const acc = targetWords.length > 0 ? Math.round((correctCount / targetWords.length) * 100) : 0;
         
-        // --- WPMの計算 ---
+        // --- WPM計算ロジックの強化 ---
         let currentWpm = 0;
         if (startTime) {
-          const durationSeconds = (Date.now() - startTime) / 1000;
-          const durationMinutes = durationSeconds / 60;
+          const now = Date.now();
+          const durationSeconds = (now - startTime) / 1000;
           const currentWordsCount = transcript.split(/\s+/).filter(w => w.length > 0).length;
           
-          if (durationSeconds > 1) { // 1秒以上経過してから計算
+          if (durationSeconds > 0.5) { // 0.5秒以上で計算開始
+            const durationMinutes = durationSeconds / 60;
             currentWpm = Math.round(currentWordsCount / durationMinutes);
           }
         }
@@ -58,22 +59,39 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
 
       recognitionRef.current.onend = () => setIsListening(false);
     }
-  }, [startTime, targetWords]);
+  }, [startTime, targetWords]); // startTimeが変わるたびにエフェクトをリセット
 
   const toggleListening = () => {
     if (isListening) {
+      // --- 停止時の最終計算 ---
       recognitionRef.current?.stop();
       setIsListening(false);
-      // 停止時に下段へ表示
+      
+      if (startTime) {
+        const endTime = Date.now();
+        const durationSeconds = (endTime - startTime) / 1000;
+        const durationMinutes = durationSeconds / 60;
+        const finalWordsCount = spokenTranscript.split(/\s+/).filter(w => w.length > 0).length;
+        
+        if (durationSeconds > 0) {
+          const finalWpm = Math.round(finalWordsCount / durationMinutes);
+          setResults(prev => ({ ...prev, wpm: finalWpm }));
+        }
+      }
+      
       setDisplayWords(spokenTranscript.split(/\s+/).filter(w => w.length > 0));
     } else {
+      // --- 開始時の初期化 ---
       window.speechSynthesis.cancel();
       setIsModelPlaying(false);
       setSpokenTranscript("");
       setDisplayWords([]);
       setResults({ accuracy: 0, wpm: 0 });
+      
+      // startTimeを確実にセットしてから開始
       const now = Date.now();
       setStartTime(now);
+      
       recognitionRef.current?.start();
       setIsListening(true);
     }
@@ -104,17 +122,19 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-4 animate-in fade-in duration-500 font-pop px-2 pb-10">
+      {/* スコア表示パネル */}
       <div className="flex gap-4 justify-center">
         <div className="bg-cyan-500 text-white p-3 rounded-xl shadow-lg w-28 text-center border-b-4 border-cyan-700">
-          <p className="text-[10px] font-black uppercase">Accuracy</p>
+          <p className="text-[10px] font-black uppercase tracking-widest">Accuracy</p>
           <p className="text-2xl font-black">{results.accuracy}%</p>
         </div>
         <div className="bg-rose-500 text-white p-3 rounded-xl shadow-lg w-28 text-center border-b-4 border-rose-700">
-          <p className="text-[10px] font-black uppercase">WPM</p>
+          <p className="text-[10px] font-black uppercase tracking-widest">WPM</p>
           <p className="text-2xl font-black">{results.wpm}</p>
         </div>
       </div>
 
+      {/* お手本枠 */}
       <div className="bg-white rounded-3xl p-5 shadow-md border-2 border-slate-100 text-left relative">
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-2">
@@ -133,6 +153,7 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
         </div>
       </div>
 
+      {/* あなたの発音枠 */}
       <div className="bg-rose-50/50 rounded-3xl p-5 shadow-md border-2 border-rose-100 text-left min-h-[120px] relative">
         <div className="flex justify-between items-center mb-2">
           <p className="text-[10px] font-black text-rose-500 uppercase">Your Voice (あなたの発音)</p>
