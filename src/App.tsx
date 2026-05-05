@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Play, CheckCircle, BookOpen, Volume2, Square, Mic, Headphones, Zap, ChevronDown } from 'lucide-react';
+import { Home, Play, CheckCircle, BookOpen, Volume2, Square, Mic, Headphones, ChevronDown, X, Share } from 'lucide-react';
 import { ListeningStep } from './components/ListeningStep';
 import { QuizStep } from './components/QuizStep';
 import { VocabularyStep } from './components/VocabularyStep';
@@ -12,6 +12,56 @@ import type { Episode, KeyPhrase } from './data/episodes';
 
 const stopSpeech = () => {
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+};
+
+// --- ホーム画面追加を促すポップアップ ---
+const PWAInstallPrompt = () => {
+  const [showPrompt, setShowPrompt] = useState(false);
+
+  useEffect(() => {
+    // iOS/iPadOS かつ、まだホーム画面に追加されていない（スタンドアロンでない）場合に表示
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isStandalone = (window as any).navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+    if (isIOS && !isStandalone) {
+      // 2秒後に表示
+      const timer = setTimeout(() => setShowPrompt(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  if (!showPrompt) return null;
+
+  return (
+    <div className="fixed inset-x-4 bottom-10 z-[100] animate-in slide-in-from-bottom-8 duration-500">
+      <div className="bg-white rounded-[24px] p-6 shadow-2xl border-4 border-slate-100 flex items-start gap-4 relative">
+        <button 
+          onClick={() => setShowPrompt(false)}
+          className="absolute top-4 right-4 text-slate-300 hover:text-slate-500 transition-colors"
+        >
+          <X size={24} />
+        </button>
+        
+        {/* publicに保存したアイコンを表示 */}
+        <img 
+          src="/apple-touch-icon.PNG" 
+          alt="App Icon" 
+          className="w-16 h-16 rounded-2xl shadow-md border border-slate-50"
+        />
+        
+        <div className="flex-1 pr-6">
+          <h3 className="text-lg font-black text-slate-800 mb-1">ホーム画面に追加</h3>
+          <p className="text-sm text-slate-500 font-bold leading-snug">
+            全画面で快適にプレイできます。下部の
+            <span className="inline-block mx-1 p-1 bg-slate-100 rounded text-cyan-600 align-middle">
+              <Share size={14} className="inline" />
+            </span>
+            をタップし、「ホーム画面に追加」を選択してください。
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // --- インライン・オーバーラッピング ---
@@ -202,6 +252,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-pop">
+      {/* ポップアップコンポーネントを配置 */}
+      <PWAInstallPrompt />
+
       <header className="bg-white sticky top-0 z-50 border-b-4 border-slate-100 px-6 py-4 flex justify-between items-center shadow-sm">
         <button
           onClick={() => {
