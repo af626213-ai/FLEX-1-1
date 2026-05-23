@@ -2,7 +2,7 @@ import { Episode } from '../../types';
 
 export const lesson3_2: Episode = {
   id: 8,
-  title: "Energy from Space (Part 2)",
+  title: "Energy from Space",
   script: "Are there any solutions to the energy problem? JAXA is now working on a big project. It is planning to build satellites in space and produce energy there. The satellites built by JAXA will produce energy from sunlight. But how will they send the energy to the earth? In the form of microwaves or laser beams! People on the earth will catch them with big antennas called rectennas. What does this mean for the future? If the project succeeds, we will be able to get energy produced in space at any time. There are no rainy days and no nights there. We can always get sunlight as long as the sun exists.",
   
   // 英文のスラッシュの位置
