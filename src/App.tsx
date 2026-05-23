@@ -198,6 +198,10 @@ export default function App() {
   };
 
   const renderMainMenu = () => {
+    // 選択されたレッスン番号に応じて、読み込むべきエピソードIDの開始点を特定
+    // Lesson 1 -> ID: 1, 2, 3
+    // Lesson 2 -> ID: 4, 5, 6
+    // Lesson 3 -> ID: 7, 8, 9
     const startId = (selectedLesson - 1) * 3 + 1;
     const filteredEpisodes = courseData.episodes.filter((ep) => ep.id >= startId && ep.id <= startId + 2);
 
@@ -218,6 +222,7 @@ export default function App() {
               >
                 <option value={1}>Lesson 1: Matsuoka Shuzo</option>
                 <option value={2}>Lesson 2: The Jar of Life</option>
+                <option value={3}>Lesson 3: A Future Energy Crisis</option>
               </select>
               <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-orange-400 pointer-events-none" size={24} />
             </div>
