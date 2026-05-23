@@ -145,11 +145,14 @@ export default function App() {
     }
     setIsSending(true);
 
-    // 先生のGoogleフォームのベースIDを設定
+    // GoogleフォームのベースURL
     const formId = "1FAIpQLSc-VFKZhqhx3q-lpkclvNEoKf2VxZb3leSkIJOnQ6r0iTBirg"; 
     const formUrl = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
     
-    // 解析した固有のエントリIDを完全にマッピングしました
+    // 現在のエピソードIDからPart番号(1〜3)を自動計算
+    const partNum = ((selectedEpisode.id - 1) % 3) + 1;
+
+    // 解析されたエントリIDを完全に組み込みました
     const formData = new FormData();
     formData.append('entry.1623079129', studentInfo.grade);
     formData.append('entry.1605514074', studentInfo.classNum);
@@ -157,6 +160,8 @@ export default function App() {
     formData.append('entry.522541386', studentInfo.name);
     formData.append('entry.2065434801', finalScores.acc.toString());
     formData.append('entry.1759461570', finalScores.wpm.toString());
+    formData.append('entry.738533923', selectedLesson.toString()); // 自動計算されたLesson番号
+    formData.append('entry.773089114', partNum.toString());        // 自動計算されたPart番号
 
     try {
       await fetch(formUrl, { method: 'POST', body: formData, mode: 'no-cors' });
