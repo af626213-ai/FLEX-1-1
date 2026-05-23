@@ -4,6 +4,9 @@ import { lesson1_3 } from './lesson1-3';
 import { lesson2_1 } from './lesson2-1';
 import { lesson2_2 } from './lesson2-2';
 import { lesson2_3 } from './lesson2-3';
+import { lesson3_1 } from './lesson3-1';
+import { lesson3_2 } from './lesson3-2';
+import { lesson3_3 } from './lesson3-3';
 
 import { CourseData } from '../types';
 
@@ -15,7 +18,10 @@ export const courseData: CourseData = {
     lesson1_3,
     lesson2_1,
     lesson2_2,
-    lesson2_3
+    lesson2_3,
+    lesson3_1,
+    lesson3_2,
+    lesson3_3
   ]
 };
 
