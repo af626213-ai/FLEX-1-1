@@ -2,7 +2,7 @@ import { Episode } from '../../types';
 
 export const lesson3_3: Episode = {
   id: 9,
-  title: "Challenges for JAXA (Part 3)",
+  title: "Challenges for JAXA",
   script: "JAXA has worked on this project for a long time. However, it still needs to solve some problems. The biggest one is its costs. JAXA will have to send many satellite parts into space. This will cost a huge amount of money. Another problem is space debris moving around the earth. Because of its high speed, even a small piece of debris can cause great damage to a satellite. Also, it is difficult to focus microwaves or laser beams on exact points very far away. In the JAXA project, the antennas on the earth will be about 36,000 kilometers away. This is another big problem for JAXA to solve.",
   
   // 英文のスラッシュの位置
