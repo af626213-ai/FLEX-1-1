@@ -2,7 +2,7 @@ import { Episode } from '../../types';
 
 export const lesson3_1: Episode = {
   id: 7,
-  title: "A Future Energy Crisis (Part 1)",
+  title: "A Future Energy Crisis",
   script: "Today, experts are worried about a future energy crisis. In 2040, the world’s increasing population will reach nine billion. If everyone wants to live a “modern” life, then the world will face a big problem―a severe shortage of energy. In order to support our lives, we can use green energy, such as solar and wind power. However, there is a big problem with this kind of energy. Its sources are not stable: sometimes they can’t produce enough power. They depend on the time of day and the weather.",
   
   slash_script: "Today, / experts are worried about / a future energy crisis. // In 2040, / the world’s increasing population / will reach nine billion. // If everyone wants to live / a “modern” life, / then the world will face a big problem / ―a severe shortage of energy. // In order to support our lives, / we can use green energy, / such as solar and wind power. // However, / there is a big problem / with this kind of energy. // Its sources are not stable: / sometimes they can’t produce enough power. // They depend on / the time of day and the weather. //",
