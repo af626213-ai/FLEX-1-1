@@ -1,15 +1,16 @@
-{
-  id: 8, // Part 1の次のIDになります
+import { Episode } from '../../types';
+
+export const lesson3_2: Episode = {
+  id: 8,
   title: "Energy from Space (Part 2)",
   script: "Are there any solutions to the energy problem? JAXA is now working on a big project. It is planning to build satellites in space and produce energy there. The satellites built by JAXA will produce energy from sunlight. But how will they send the energy to the earth? In the form of microwaves or laser beams! People on the earth will catch them with big antennas called rectennas. What does this mean for the future? If the project succeeds, we will be able to get energy produced in space at any time. There are no rainy days and no nights there. We can always get sunlight as long as the sun exists.",
   
   // 英文のスラッシュの位置
   slash_script: "Are there any solutions / to the energy problem? // JAXA is now working / on a big project. // It is planning / to build satellites in space / and produce energy there. // The satellites built by JAXA / will produce energy / from sunlight. // But how / will they send the energy / to the earth? // In the form of / microwaves or laser beams! // People on the earth / will catch them / with big antennas / called rectennas. // What does this mean / for the future? // If the project succeeds, / we will be able to get energy / produced in space / at any time. // There are no rainy days / and no nights there. // We can always get sunlight / as long as the sun exists. //",
   
-  // 英文のスラッシュと完全に位置を一致させた日本語訳（直訳・語順通り）
+  // 英文のスラッシュと完全に位置を一致させた日本語訳
   japanese_translation: "何か解決策はありますか / そのエネルギー問題に対する？ // JAXAは今取り組んでいます / 大きなプロジェクトに。 // それは〜を計画しています / 宇宙に人工衛星を建てることを / そしてそこでエネルギーを生産することを。 // JAXAによって建てられた人工衛星は / エネルギーを生産するでしょう / 太陽光から。 // しかしどのようにして / 彼らはそのエネルギーを送るのでしょうか / 地球へ？ // 〜の形で / マイクロ波やレーザー光線の！ // 地球上の人々は / それらをキャッチするでしょう / 大きなアンテナで / レクテナと呼ばれる。 // これは何を意味するのでしょうか / 将来にとって？ // もしプロジェクトが成功すれば、 / 私たちはエネルギーを得ることができるでしょう / 宇宙で生産された / いつでも。 // 雨の日はありません / そして夜もありません、そこには。 // 私たちはいつでも太陽光を得ることができます / 太陽が存在する限り。 //",
 
-  // 内容理解クイズ
   quizzes: [
     {
       question: "How will the satellites send energy to the earth?",
@@ -33,7 +34,6 @@
     }
   ],
 
-  // 語彙クイズ
   vocab_quizzes: [
     { english: "solution", japanese: "解決策" },
     { english: "satellite", japanese: "人工衛星" },
@@ -44,7 +44,6 @@
     { english: "exist", japanese: "存在する" }
   ],
 
-  // 重要キーフレーズ
   key_phrases: [
     {
       phrase: "work on ~",
@@ -60,7 +59,6 @@
     }
   ],
 
-  // ディクテーション用
   dictation_items: [
     {
       id: 1,
@@ -88,4 +86,4 @@
       hiddenWord: "exists"
     }
   ]
-}
+};
