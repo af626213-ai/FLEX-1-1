@@ -52,31 +52,88 @@ const PWAInstallPrompt = () => {
   );
 };
 
-// --- インライン・オーバーラッピング ---
+// --- インライン・オーバーラッピング（カラオケ風ハイライト対応版） ---
 const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+
+  // 単語数と再生速度から、おおよその読み上げ秒数を自動計算
+  useEffect(() => {
+    const wordCount = script.split(/\s+/).filter(Boolean).length;
+    // 標準速度を130WPMとし、選択レートで補正
+    const estimatedSeconds = (wordCount / (130 * rate)) * 60;
+    // 最低2秒、少し余裕を持たせるための調整
+    setDuration(Math.max(estimatedSeconds * 1.1, 2));
+  }, [script, rate]);
+
   const handlePlay = () => {
-    if (isPlaying) { stopSpeech(); setIsPlaying(false); }
-    else {
+    if (isPlaying) {
       stopSpeech();
-      const u = new SpeechSynthesisUtterance(script); u.lang = 'en-US'; u.rate = rate;
-      u.onend = () => setIsPlaying(false); window.speechSynthesis.speak(u); setIsPlaying(true);
+      setIsPlaying(false);
+    } else {
+      stopSpeech();
+      const u = new SpeechSynthesisUtterance(script);
+      u.lang = 'en-US';
+      u.rate = rate;
+      u.onend = () => setIsPlaying(false);
+      u.onerror = () => setIsPlaying(false);
+      window.speechSynthesis.speak(u);
+      setIsPlaying(true);
     }
   };
+
+  useEffect(() => {
+    return () => stopSpeech();
+  }, []);
+
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop">
       <div className="text-center space-y-2">
         <div className="inline-block p-3 bg-orange-500 rounded-2xl text-white shadow-md"><Mic size={32} /></div>
         <h2 className="text-3xl font-black text-slate-800">Step 7: Overlapping</h2>
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 text-center text-orange-700 font-bold">音声にピッタリ重ねてスクリプトを同時に音読しよう！</div>
+        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mt-4 text-center text-orange-700 font-bold">
+          音声にピッタリ重ねてスクリプトを同時に音読しよう！
+        </div>
       </div>
-      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 relative">
-        <button onClick={handlePlay} className="absolute top-4 right-4 w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center hover:bg-orange-200 transition-all">
+      
+      <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 relative overflow-hidden">
+        <button 
+          onClick={handlePlay} 
+          className="absolute top-4 right-4 z-10 w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center hover:bg-orange-200 transition-all shadow-sm"
+        >
           {isPlaying ? <Square size={24} /> : <Volume2 size={24} />}
         </button>
-        <p className="text-2xl text-slate-800 leading-relaxed pr-20 font-bold text-left">{script}</p>
+
+        {/* カラオケ風アニメーション用の動的CSS */}
+        <style>{`
+          @keyframes karaoke {
+            0% { background-position: 100% 0; }
+            100% { background-position: 0% 0; }
+          }
+          .karaoke-text {
+            background: linear-gradient(to right, #0284c7 50%, #1e293b 50%);
+            background-size: 200% 100%;
+            background-position: 100% 0;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: background-position 0.2s ease-out;
+          }
+          .karaoke-active {
+            animation: karaoke ${duration}s linear forwards;
+          }
+        `}</style>
+
+        <p className={`text-2xl font-bold text-left leading-relaxed pr-20 karaoke-text ${isPlaying ? 'karaoke-active' : ''}`}>
+          {script}
+        </p>
       </div>
-      <button onClick={() => { stopSpeech(); onNext(); }} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all">Go to Shadowing</button>
+
+      <button 
+        onClick={() => { stopSpeech(); onNext(); }} 
+        className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all"
+      >
+        Go to Shadowing
+      </button>
     </div>
   );
 };
@@ -132,7 +189,7 @@ export default function App() {
     }
   }, [currentStep]);
 
-  // 全角数字を半角数字に変換し、数字以外を除去
+  // 全角数字を半角に変換、数字以外を除去
   const sanitizeNumber = (val: string) => {
     const halfWidth = val.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
     return halfWidth.replace(/[^0-9]/g, '');
@@ -145,14 +202,12 @@ export default function App() {
     }
     setIsSending(true);
 
-    // GoogleフォームのベースURL
     const formId = "1FAIpQLSc-VFKZhqhx3q-lpkclvNEoKf2VxZb3leSkIJOnQ6r0iTBirg"; 
     const formUrl = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
     
-    // 現在のエピソードIDからPart番号(1〜3)を自動計算
+    // エピソードIDからPart番号(1〜3)を自動計算
     const partNum = ((selectedEpisode.id - 1) % 3) + 1;
 
-    // 解析されたエントリIDを完全に組み込みました
     const formData = new FormData();
     formData.append('entry.1623079129', studentInfo.grade);
     formData.append('entry.1605514074', studentInfo.classNum);
@@ -160,8 +215,8 @@ export default function App() {
     formData.append('entry.522541386', studentInfo.name);
     formData.append('entry.2065434801', finalScores.acc.toString());
     formData.append('entry.1759461570', finalScores.wpm.toString());
-    formData.append('entry.738533923', selectedLesson.toString()); // 自動計算されたLesson番号
-    formData.append('entry.773089114', partNum.toString());        // 自動計算されたPart番号
+    formData.append('entry.738533923', selectedLesson.toString()); // Lesson自動送信
+    formData.append('entry.773089114', partNum.toString());        // Part自動送信
 
     try {
       await fetch(formUrl, { method: 'POST', body: formData, mode: 'no-cors' });
