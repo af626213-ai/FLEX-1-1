@@ -52,7 +52,7 @@ const PWAInstallPrompt = () => {
   );
 };
 
-// --- インライン・オーバーラッピング（文ごとの順番ハイライト対応版） ---
+// --- インライン・オーバーラッピング（文ごとの順番ハイライト対応・スピード調整版） ---
 const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sentences, setSentences] = useState<{ text: string; duration: number; delay: number }[]>([]);
@@ -64,8 +64,9 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
     let currentDelay = 0;
     const processed = rawSentences.map((sentenceText) => {
       const wordCount = sentenceText.split(/\s+/).filter(Boolean).length;
-      // 130 WPM を基準速度とし、選択されたrateで補正してこの文の読み上げ秒数を計算
-      const sentenceDuration = (wordCount / (130 * rate)) * 60;
+      
+      // ✨ 基準速度を 145 WPM に引き上げて青色変化のスピードを音声に追いつかせました
+      const sentenceDuration = (wordCount / (145 * rate)) * 60;
       
       const item = {
         text: sentenceText,
@@ -227,12 +228,14 @@ export default function App() {
     }
     setIsSending(true);
 
+    // GoogleフォームのベースURL
     const formId = "1FAIpQLSc-VFKZhqhx3q-lpkclvNEoKf2VxZb3leSkIJOnQ6r0iTBirg"; 
     const formUrl = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
     
     // エピソードIDからPart番号(1〜3)を自動計算
     const partNum = ((selectedEpisode.id - 1) % 3) + 1;
 
+    // 解析されたエントリIDの完全マッピング
     const formData = new FormData();
     formData.append('entry.1623079129', studentInfo.grade);
     formData.append('entry.1605514074', studentInfo.classNum);
