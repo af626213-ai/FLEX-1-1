@@ -52,55 +52,70 @@ const PWAInstallPrompt = () => {
   );
 };
 
-// --- インライン・オーバーラッピング（文ごとの順番ハイライト対応・スピード調整版） ---
+// --- インライン・オーバーラッピング（音声イベント完全同期版） ---
 const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [sentences, setSentences] = useState<{ text: string; duration: number; delay: number }[]>([]);
-
-  useEffect(() => {
-    // スクリプトを文（. や ! や ?）ごとに分割
-    const rawSentences = script.match(/[^.!?]+[.!?]+(\s+“)?/g) || [script];
-    
-    let currentDelay = 0;
-    const processed = rawSentences.map((sentenceText) => {
-      const wordCount = sentenceText.split(/\s+/).filter(Boolean).length;
-      
-      // ✨ 基準速度を 145 WPM に引き上げて青色変化のスピードを音声に追いつかせました
-      const sentenceDuration = (wordCount / (145 * rate)) * 60;
-      
-      const item = {
-        text: sentenceText,
-        duration: sentenceDuration,
-        delay: currentDelay,
-      };
-      
-      // 次の文の開始タイミングをずらす（前の一連の秒数を蓄積）
-      currentDelay += sentenceDuration;
-      return item;
-    });
-
-    setSentences(processed);
-  }, [script, rate]);
+  // 現在音声が読み上げている文字の位置（インデックス）を保持
+  const [highlightIndex, setHighlightIndex] = useState(0);
 
   const handlePlay = () => {
     if (isPlaying) {
       stopSpeech();
       setIsPlaying(false);
+      setHighlightIndex(0);
     } else {
       stopSpeech();
       const u = new SpeechSynthesisUtterance(script);
       u.lang = 'en-US';
       u.rate = rate;
-      u.onend = () => setIsPlaying(false);
-      u.onerror = () => setIsPlaying(false);
+
+      // ✨ 発音された瞬間の文字位置（charIndex）をリアルタイムにキャッチ！
+      u.onboundary = (event) => {
+        if (event.name === 'word') {
+          setHighlightIndex(event.charIndex);
+        }
+      };
+
+      u.onend = () => {
+        setIsPlaying(false);
+        setHighlightIndex(0);
+      };
+      u.onerror = () => {
+        setIsPlaying(false);
+        setHighlightIndex(0);
+      };
+
       window.speechSynthesis.speak(u);
       setIsPlaying(true);
     }
   };
 
   useEffect(() => {
-    return () => stopSpeech();
+    return () => {
+      stopSpeech();
+    };
   }, []);
+
+  // スクリプトを「すでに読まれた部分」と「これから読む部分」に綺麗に切り分ける
+  const renderHighlightedScript = () => {
+    if (!isPlaying || highlightIndex === 0) {
+      return <span className="text-slate-800">{script}</span>;
+    }
+
+    // highlightIndex の直前にある直近のスペースや単語の区切りを探して微調整
+    const breakPoint = highlightIndex;
+    const spoken = script.substring(0, breakPoint);
+    const remaining = script.substring(breakPoint);
+
+    return (
+      <>
+        {/* すでに読まれた文字はカチッと綺麗な青色に固定 */}
+        <span className="text-sky-600 transition-colors duration-100">{spoken}</span>
+        {/* これから読まれる文字は黒色のまま */}
+        <span className="text-slate-800">{remaining}</span>
+      </>
+    );
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop">
@@ -120,38 +135,10 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
           {isPlaying ? <Square size={24} /> : <Volume2 size={24} />}
         </button>
 
-        {/* 文ごとにディレイを個別に当てる動的CSSキーフレーム */}
-        <style>{`
-          @keyframes karaoke-line {
-            0% { background-position: 100% 0; }
-            100% { background-position: 0% 0; }
-          }
-          .karaoke-span {
-            background: linear-gradient(to right, #0284c7 50%, #1e293b 50%);
-            background-size: 200% 100%;
-            background-position: 100% 0;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: inline;
-          }
-        `}</style>
-
-        <div className="text-2xl font-bold text-left leading-relaxed pr-20">
-          {sentences.map((s, idx) => (
-            <span
-              key={idx}
-              className="karaoke-span"
-              style={{
-                animation: isPlaying 
-                  ? `karaoke-line ${s.duration}s linear forwards` 
-                  : 'none',
-                animationDelay: isPlaying ? `${s.delay}s` : '0s'
-              }}
-            >
-              {s.text}
-            </span>
-          ))}
-        </div>
+        {/* 1行ごとのズレも文ごとのズレも完全にゼロになるテキストエリア */}
+        <p className="text-2xl font-bold text-left leading-relaxed pr-20 whitespace-pre-wrap">
+          {renderHighlightedScript()}
+        </p>
       </div>
 
       <button 
@@ -163,6 +150,7 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
     </div>
   );
 };
+
 
 // --- インライン・シャドーイング ---
 const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
