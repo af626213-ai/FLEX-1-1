@@ -52,18 +52,33 @@ const PWAInstallPrompt = () => {
   );
 };
 
-// --- インライン・オーバーラッピング（カラオケ風ハイライト対応版） ---
+// --- インライン・オーバーラッピング（文ごとの順番ハイライト対応版） ---
 const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [duration, setDuration] = useState(0);
+  const [sentences, setSentences] = useState<{ text: string; duration: number; delay: number }[]>([]);
 
-  // 単語数と再生速度から、おおよその読み上げ秒数を自動計算
   useEffect(() => {
-    const wordCount = script.split(/\s+/).filter(Boolean).length;
-    // 標準速度を130WPMとし、選択レートで補正
-    const estimatedSeconds = (wordCount / (130 * rate)) * 60;
-    // 最低2秒、少し余裕を持たせるための調整
-    setDuration(Math.max(estimatedSeconds * 1.1, 2));
+    // スクリプトを文（. や ! や ?）ごとに分割
+    const rawSentences = script.match(/[^.!?]+[.!?]+(\s+“)?/g) || [script];
+    
+    let currentDelay = 0;
+    const processed = rawSentences.map((sentenceText) => {
+      const wordCount = sentenceText.split(/\s+/).filter(Boolean).length;
+      // 130 WPM を基準速度とし、選択されたrateで補正してこの文の読み上げ秒数を計算
+      const sentenceDuration = (wordCount / (130 * rate)) * 60;
+      
+      const item = {
+        text: sentenceText,
+        duration: sentenceDuration,
+        delay: currentDelay,
+      };
+      
+      // 次の文の開始タイミングをずらす（前の一連の秒数を蓄積）
+      currentDelay += sentenceDuration;
+      return item;
+    });
+
+    setSentences(processed);
   }, [script, rate]);
 
   const handlePlay = () => {
@@ -104,28 +119,38 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
           {isPlaying ? <Square size={24} /> : <Volume2 size={24} />}
         </button>
 
-        {/* カラオケ風アニメーション用の動的CSS */}
+        {/* 文ごとにディレイを個別に当てる動的CSSキーフレーム */}
         <style>{`
-          @keyframes karaoke {
+          @keyframes karaoke-line {
             0% { background-position: 100% 0; }
             100% { background-position: 0% 0; }
           }
-          .karaoke-text {
+          .karaoke-span {
             background: linear-gradient(to right, #0284c7 50%, #1e293b 50%);
             background-size: 200% 100%;
             background-position: 100% 0;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            transition: background-position 0.2s ease-out;
-          }
-          .karaoke-active {
-            animation: karaoke ${duration}s linear forwards;
+            display: inline;
           }
         `}</style>
 
-        <p className={`text-2xl font-bold text-left leading-relaxed pr-20 karaoke-text ${isPlaying ? 'karaoke-active' : ''}`}>
-          {script}
-        </p>
+        <div className="text-2xl font-bold text-left leading-relaxed pr-20">
+          {sentences.map((s, idx) => (
+            <span
+              key={idx}
+              className="karaoke-span"
+              style={{
+                animation: isPlaying 
+                  ? `karaoke-line ${s.duration}s linear forwards` 
+                  : 'none',
+                animationDelay: isPlaying ? `${s.delay}s` : '0s'
+              }}
+            >
+              {s.text}
+            </span>
+          ))}
+        </div>
       </div>
 
       <button 
