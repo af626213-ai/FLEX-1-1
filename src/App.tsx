@@ -96,26 +96,34 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
     };
   }, []);
 
-  // スクリプトを「すでに読まれた部分」と「これから読む部分」に綺麗に切り分ける
+  // スクリプトを「これから読む単語の末尾」で綺麗に切り分ける
   const renderHighlightedScript = () => {
     if (!isPlaying || highlightIndex === 0) {
       return <span className="text-slate-800">{script}</span>;
     }
 
-    // highlightIndex の直前にある直近のスペースや単語の区切りを探して微調整
-    const breakPoint = highlightIndex;
+    // 発音される単語の先頭（highlightIndex）以降で、最初のスペース（単語の区切り）を探す
+    const remainingText = script.substring(highlightIndex);
+    const nextSpaceIndex = remainingText.search(/\s/);
+    
+    // 発音中の単語の「末尾」の位置を計算（文末などでスペースがない場合は全文）
+    const breakPoint = nextSpaceIndex !== -1 
+      ? highlightIndex + nextSpaceIndex 
+      : script.length;
+
     const spoken = script.substring(0, breakPoint);
     const remaining = script.substring(breakPoint);
 
     return (
       <>
-        {/* すでに読まれた文字はカチッと綺麗な青色に固定 */}
-        <span className="text-sky-600 transition-colors duration-100">{spoken}</span>
-        {/* これから読まれる文字は黒色のまま */}
+        {/* 発音される直前の単語までを、先回りして綺麗な青色に変化 */}
+        <span className="text-sky-600 transition-colors duration-700">{spoken}</span>
+        {/* まだ読まれない先の単語は黒色のまま */}
         <span className="text-slate-800">{remaining}</span>
       </>
     );
   };
+
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop">
