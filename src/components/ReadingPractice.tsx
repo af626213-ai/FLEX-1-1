@@ -189,11 +189,12 @@ export const ReadingPractice = ({ script, onNext }: ReadingPracticeProps) => {
           <button onClick={handleRetry} className="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-500 font-black rounded-xl text-sm flex items-center justify-center gap-2">
             <RotateCcw size={16} /> RETRY
           </button>
+          {/* ✨ ここを「結果表示 (GO NEXT)」に変更しました */}
           <button 
             onClick={() => onNext(results.accuracy, results.wpm)} 
             className="flex-[2] py-3 bg-orange-500 text-white font-black rounded-xl text-sm shadow-lg border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all"
           >
-            成績提出 (GO NEXT)
+            結果表示 (GO NEXT)
           </button>
         </div>
       </div>
