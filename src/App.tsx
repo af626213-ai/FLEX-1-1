@@ -141,7 +141,7 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
 
 // --- インライン・シャドーイング ---
 const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, useState] = useState(false);
   const handlePlay = () => {
     if (isPlaying) { stopSpeech(); setIsPlaying(false); }
     else {
@@ -174,6 +174,8 @@ export default function App() {
   const [speechRate, setSpeechRate] = useState<number>(1.0);
   const [finalScores, setFinalScores] = useState({ acc: 0, wpm: 0 });
 
+  const [studentInfo, setStudentInfo] = useState({ grade: '', classNum: '', attendNum: '', name: '' });
+
   const [formBaseUrl, setFormBaseUrl] = useState<string>(() => localStorage.getItem('flex_teacher_form_id') || '');
   
   const [isExamStudentView, setIsExamStudentView] = useState<boolean>(false);
@@ -192,13 +194,13 @@ export default function App() {
     const examPart = params.get('examPart');
     const targetFormId = params.get('formId');
 
-    if (examLesson && examPart && targetFormId) {
-      const lesNum = Number(examLesson);
-      const partNum = Number(examPart);
+    if (params.has('examLesson') || params.has('examPart') || params.has('formId')) {
+      const lesNum = Number(examLesson || 1);
+      const partNum = Number(examPart || 1);
       
       setExamLessonId(lesNum);
       setExamPartNum(partNum);
-      setFormBaseUrl(targetFormId);
+      if (targetFormId) setFormBaseUrl(targetFormId);
       setIsExamStudentView(true);
 
       const targetEpisodeId = (lesNum - 1) * 3 + partNum;
@@ -217,6 +219,11 @@ export default function App() {
       const finishAudio = new Audio('/finish.mp3'); finishAudio.volume = 0.5; finishAudio.play().catch(() => {});
     }
   }, [currentStep]);
+
+  const sanitizeNumber = (val: string) => {
+    const halfWidth = val.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+    return halfWidth.replace(/[^0-9]/g, '');
+  };
 
   const handleCopyFormTemplateScript = () => {
     const targetUrl = "https://docs.google.com/forms/d/1ROGNVF3VpWXUHmuPYrp3tMI8XE4F3C54SE7YkTOESQw/copy";
@@ -274,7 +281,7 @@ export default function App() {
                 placeholder="ここにGoogleフォームのリンク、またはIDを入力してください" 
                 className="flex-1 bg-slate-50 text-xs p-3 rounded-xl border-2 border-slate-100 font-mono shadow-inner outline-none focus:border-orange-400 transition-colors" 
               />
-              if (formBaseUrl) {
+              {formBaseUrl && (
                 <button 
                   type="button" 
                   onClick={handleClearFormStorage} 
@@ -283,7 +290,7 @@ export default function App() {
                 >
                   <Trash2 size={16} />
                 </button>
-              }
+              )}
             </div>
           </div>
 
@@ -395,7 +402,7 @@ export default function App() {
                 <div><p className="text-xs text-slate-400 font-bold uppercase">WPM</p><p className="text-3xl font-black text-rose-500">{finalScores.wpm}</p></div>
               </div>
 
-              {/* ✨ 学年等の不要な入力フォーム枠を完全に削除し、次の画面に進むだけのシンプルで綺麗なボタンに統合しました */}
+              {/* ✨ ボタンのテキストを「結果表示 (GO NEXT)」から「メインメニューに戻る」に変更しました */}
               <button 
                 onClick={() => { 
                   if (isExamStudentView) {
@@ -406,7 +413,7 @@ export default function App() {
                 }} 
                 className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl shadow-lg border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2"
               >
-                結果表示 (GO NEXT)
+                メインメニューに戻る
               </button>
             </div>
           )}
