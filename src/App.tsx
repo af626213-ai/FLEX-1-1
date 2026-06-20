@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Play, CheckCircle, BookOpen, Volume2, Square, Mic, Headphones, ChevronDown, X, Share, Send, Loader2 } from 'lucide-react';
+import { Home, Play, CheckCircle, BookOpen, Volume2, Square, Mic, Headphones, ChevronDown, X, Share, Send, Loader2, Link, ClipboardCheck } from 'lucide-react';
 import { ListeningStep } from './components/ListeningStep';
 import { QuizStep } from './components/QuizStep';
 import { VocabularyStep } from './components/VocabularyStep';
@@ -10,11 +10,9 @@ import { ReadingPractice } from './components/ReadingPractice';
 import { courseData } from './data/episodes';
 import type { Episode, KeyPhrase } from './data/episodes';
 
-// ✨ iPad(iOS)のSpeechSynthesisフリーズバグを完全に回避する安全な停止関数
 const stopSpeech = () => {
   if ('speechSynthesis' in window) {
     try {
-      // 再生中(speaking)または、再生待ちキュー(pending)がある場合のみ安全にキャンセルを叩く
       if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
         window.speechSynthesis.cancel();
       }
@@ -84,25 +82,15 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
         }
       };
 
-      u.onend = () => {
-        setIsPlaying(false);
-        setHighlightIndex(0);
-      };
-      u.onerror = () => {
-        setIsPlaying(false);
-        setHighlightIndex(0);
-      };
+      u.onend = () => { setIsPlaying(false); setHighlightIndex(0); };
+      u.onerror = () => { setIsPlaying(false); setHighlightIndex(0); };
 
       window.speechSynthesis.speak(u);
       setIsPlaying(true);
     }
   };
 
-  useEffect(() => {
-    return () => {
-      stopSpeech();
-    };
-  }, []);
+  useEffect(() => { return () => stopSpeech(); }, []);
 
   const renderHighlightedScript = () => {
     if (!isPlaying || highlightIndex === 0) {
@@ -138,24 +126,15 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
       </div>
       
       <div className="bg-white rounded-[32px] p-8 shadow-xl border-4 border-slate-100 relative overflow-hidden">
-        <button 
-          onClick={handlePlay} 
-          className="absolute top-4 right-4 z-10 w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center hover:bg-orange-200 transition-all shadow-sm"
-        >
+        <button onClick={handlePlay} className="absolute top-4 right-4 z-10 w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center hover:bg-orange-200 transition-all shadow-sm">
           {isPlaying ? <Square size={24} /> : <Volume2 size={24} />}
         </button>
-
         <p className="text-2xl font-bold text-left leading-relaxed pr-20 whitespace-pre-wrap">
           {renderHighlightedScript()}
         </p>
       </div>
 
-      <button 
-        onClick={() => { stopSpeech(); onNext(); }} 
-        className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all"
-      >
-        Go to Shadowing
-      </button>
+      <button onClick={() => { stopSpeech(); onNext(); }} className="w-full py-5 bg-orange-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-orange-600 active:scale-95 transition-all">Go to Shadowing</button>
     </div>
   );
 };
@@ -199,10 +178,45 @@ export default function App() {
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
+  // 🔗 先生用：各先生独自の回収GoogleフォームのベースIDを記憶（デフォルトは深澤先生のID）
+  const [formBaseUrl, setFormBaseUrl] = useState<string>(() => localStorage.getItem('flex_teacher_form_id') || '1FAIpQLSc-VFKZhqhx3q-lpkclvNEoKf2VxZb3leSkIJOnQ6r0iTBirg');
+  
+  // 🎓 生徒用：配布用URL（パラメーター）経由で入ってきたかどうかの判定フラグ
+  const [isExamStudentView, setIsExamStudentView] = useState<boolean>(false);
+  const [examLessonId, setExamLessonId] = useState<number>(1);
+  const [examPartNum, setExamPartNum] = useState<number>(1);
+
   useEffect(() => {
     const link = document.createElement('link'); link.href = 'https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500;900&display=swap'; link.rel = 'stylesheet'; document.head.appendChild(link);
     const style = document.createElement('style'); style.textContent = `.font-pop { font-family: 'Kiwi Maru', sans-serif !important; } body { background-color: #f8fafc; }`; document.head.appendChild(style);
   }, []);
+
+  // 🔗 URLパラメーター読み込み（生徒配布用リンク時の自動フック）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const examLesson = params.get('examLesson');
+    const examPart = params.get('examPart');
+    const targetFormId = params.get('formId');
+
+    if (examLesson && examPart && targetFormId) {
+      const lesNum = Number(examLesson);
+      const partNum = Number(examPart);
+      
+      setExamLessonId(lesNum);
+      setExamPartNum(partNum);
+      setFormBaseUrl(targetFormId);
+      setIsExamStudentView(true);
+
+      const targetEpisodeId = (lesNum - 1) * 3 + partNum;
+      const foundEp = courseData.episodes.find(ep => ep.id === targetEpisodeId);
+      if (foundEp) {
+        setSelectedEpisode(foundEp);
+      }
+      setCurrentStep('practice');
+    }
+  }, []);
+
+  useEffect(() => { localStorage.setItem('flex_teacher_form_id', formBaseUrl); }, [formBaseUrl]);
 
   useEffect(() => {
     if (currentStep === 'result') {
@@ -216,6 +230,27 @@ export default function App() {
     return halfWidth.replace(/[^0-9]/g, '');
   };
 
+  // 📋 ✨ お送りいただいた音読回収専用フォームのテンプレート自動複製処理
+  const handleCopyFormTemplateScript = () => {
+    const targetUrl = "https://docs.google.com/forms/d/1ROGNVF3VpWXUHmuPYrp3tMI8XE4F3C54SE7YkTOESQw/copy";
+    window.open(targetUrl, '_blank');
+  };
+
+  const handleCopyExamUrl = (lessonNum: number, partNum: number) => {
+    if (!formBaseUrl.trim()) {
+      alert("先に提出先のGoogleフォームID、またはURLを登録してください。"); return;
+    }
+    let extractedId = formBaseUrl.trim();
+    if (formBaseUrl.includes("forms/d/")) {
+      const matches = formBaseUrl.match(/forms\/d\/e\/([^/]+)/) || formBaseUrl.match(/forms\/d\/([^/]+)/);
+      if (matches && matches[1]) extractedId = matches[1];
+    }
+
+    const finalUrl = `${window.location.origin}${window.location.pathname}?examLesson=${lessonNum}&examPart=${partNum}&formId=${extractedId}`;
+    navigator.clipboard.writeText(finalUrl);
+    alert(`🔗 Lesson ${lessonNum} Part ${partNum} の「テスト専用配布用URL」をコピーしました！これを生徒に配ってください。`);
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentInfo.grade || !studentInfo.classNum || !studentInfo.attendNum || !studentInfo.name) {
@@ -223,10 +258,15 @@ export default function App() {
     }
     setIsSending(true);
 
-    const formId = "1FAIpQLSc-VFKZhqhx3q-lpkclvNEoKf2VxZb3leSkIJOnQ6r0iTBirg"; 
-    const formUrl = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
-    
-    const partNum = ((selectedEpisode.id - 1) % 3) + 1;
+    let cleanFormId = formBaseUrl.trim();
+    if (cleanFormId.includes("forms/d/")) {
+      const matches = cleanFormId.match(/forms\/d\/e\/([^/]+)/) || cleanFormId.match(/forms\/d\/([^/]+)/);
+      if (matches && matches[1]) cleanFormId = matches[1];
+    }
+
+    const formUrl = `https://docs.google.com/forms/d/e/${cleanFormId}/formResponse`;
+    const lesNum = isExamStudentView ? examLessonId : selectedLesson;
+    const partNum = isExamStudentView ? examPartNum : ((selectedEpisode.id - 1) % 3) + 1;
 
     const formData = new FormData();
     formData.append('entry.1623079129', studentInfo.grade);
@@ -235,8 +275,8 @@ export default function App() {
     formData.append('entry.522541386', studentInfo.name);
     formData.append('entry.2065434801', finalScores.acc.toString());
     formData.append('entry.1759461570', finalScores.wpm.toString());
-    formData.append('entry.738533923', selectedLesson.toString());
-    formData.append('entry.773089114', partNum.toString());
+    formData.append('entry.738533923', lesNum.toString()); 
+    formData.append('entry.773089114', partNum.toString());        
 
     try {
       await fetch(formUrl, { method: 'POST', body: formData, mode: 'no-cors' });
@@ -255,6 +295,38 @@ export default function App() {
     const filteredEpisodes = courseData.episodes.filter((ep) => ep.id >= startId && ep.id <= startId + 2);
     return (
       <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        
+        {/* 🛠️ 先生用：成績回収フォーム設定＆テスト配布用コントロールパネル */}
+        <div className="bg-white border-2 border-orange-200 rounded-[32px] p-6 shadow-md text-left space-y-4 max-w-xl mx-auto">
+          <div className="text-sm font-black text-orange-700 border-b pb-2 flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-orange-500" />
+            <span>🛠️ 先生用：音読テスト配布コントロールパネル</span>
+          </div>
+          
+          <div className="space-y-1">
+            <button type="button" onClick={handleCopyFormTemplateScript} className="w-full py-2.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold text-xs rounded-xl flex items-center justify-center text-center transition-colors cursor-pointer">
+              📋 新しい回収フォームのテンプレートを自分のドライブにコピーする
+            </button>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-black text-slate-400 block uppercase tracking-wider">作成した独自のGoogleフォームURL、またはフォームID</label>
+            <input 
+              type="text" 
+              value={formBaseUrl} 
+              onChange={(e) => setFormBaseUrl(e.target.value)} 
+              placeholder="https://docs.google.com/forms/d/e/.../viewform" 
+              className="w-full bg-slate-50 text-xs p-3 rounded-xl border-2 border-slate-100 font-mono shadow-inner outline-none focus:border-orange-400 transition-colors" 
+            />
+          </div>
+
+          <div className="pt-2 border-t border-dashed border-slate-200">
+            <p className="text-[11px] font-bold text-slate-500 leading-snug mb-2">
+              💡 下のレッスン一覧の各カードから、特定のパートを指定して生徒へ配布する「テスト専用URL」をいつでも即座にコピーできます。
+            </p>
+          </div>
+        </div>
+
         <div className="text-center py-12 bg-gradient-to-b from-orange-50 to-white rounded-[60px] border-4 border-orange-100 shadow-inner relative overflow-hidden">
           <h2 className="text-5xl md:text-6xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
           <div className="mt-8 flex flex-col items-center gap-2 relative z-10 px-6">
@@ -270,17 +342,23 @@ export default function App() {
             </div>
           </div>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredEpisodes.map((ep, idx) => (
-            <div key={ep.id} onClick={() => handleStart(ep)} className="group bg-white rounded-[32px] p-8 border-4 border-slate-100 hover:border-orange-400 cursor-pointer transition-all shadow-sm hover:shadow-2xl hover:-translate-y-2 relative overflow-hidden flex flex-col items-center text-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-2xl shadow-lg group-hover:scale-110 transition-transform">P{idx + 1}</div>
+            <div key={ep.id} className="group bg-white rounded-[32px] p-8 border-4 border-slate-100 shadow-sm relative overflow-hidden flex flex-col items-center text-center gap-4 hover:shadow-md transition-all">
+              <div className="w-16 h-16 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-2xl shadow-lg">P{idx + 1}</div>
               <div className="space-y-1">
                 <p className="text-xs font-black text-orange-400 uppercase tracking-widest">Part {idx + 1}</p>
-                <h3 className="text-lg font-black text-slate-800 leading-tight group-hover:text-orange-600 transition-colors">{ep.title}</h3>
+                <h3 className="text-lg font-black text-slate-800 leading-tight">{ep.title}</h3>
               </div>
-              <div className="mt-2 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-orange-100 transition-colors">
-                <Play className="text-slate-300 group-hover:text-orange-500 translate-x-0.5" size={18} fill="currentColor" />
-              </div>
+              
+              <button onClick={() => handleStart(ep)} className="mt-2 w-full py-2.5 bg-orange-50 hover:bg-orange-500 hover:text-white text-orange-600 font-bold text-xs rounded-xl flex items-center justify-center gap-1 transition-all active:scale-95">
+                <Play size={14} fill="currentColor" /> フルステップ学習
+              </button>
+
+              <button onClick={() => handleCopyExamUrl(selectedLesson, idx + 1)} className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 font-black text-[10px] rounded-xl flex items-center justify-center gap-1 transition-all">
+                <Link size={12} /> 配布用テストURLをコピー
+              </button>
             </div>
           ))}
         </div>
@@ -291,8 +369,22 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-pop">
       <PWAInstallPrompt />
+      
       <header className="bg-white sticky top-0 z-50 border-b-4 border-slate-100 px-6 py-4 flex justify-between items-center shadow-sm">
-        <button onClick={() => { stopSpeech(); setCurrentStep('menu'); }} className="p-2 bg-slate-100 hover:bg-orange-100 rounded-xl text-slate-800"><Home size={22} /></button>
+        <button 
+          onClick={() => { 
+            if (isExamStudentView) {
+              if (confirm("テストモードを終了してメインメニューに戻りますか？(現在のスコアは破棄されます)")) {
+                window.location.search = ""; 
+              }
+            } else {
+              stopSpeech(); setCurrentStep('menu'); 
+            }
+          }} 
+          className="p-2 bg-slate-100 hover:bg-orange-100 rounded-xl text-slate-800"
+        >
+          <Home size={22} />
+        </button>
         <div className="flex gap-1">
           {[0.6, 0.8, 1.0, 1.1].map((r) => (
             <button key={r} onClick={() => setSpeechRate(r)} className={`px-3 py-1 rounded-lg text-xs font-black ${speechRate === r ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-400'}`}>{r}x</button>
@@ -300,12 +392,18 @@ export default function App() {
         </div>
       </header>
 
-      {currentStep !== 'menu' && currentStep !== 'result' && (
+      {currentStep !== 'menu' && currentStep !== 'result' && !isExamStudentView && (
         <nav className="bg-white border-b-2 border-slate-100 flex justify-center overflow-x-auto px-4">
           {(['listening', 'quiz', 'vocabulary', 'dictation', 'reading', 'overlapping', 'shadowing', 'practice'] as const).map((step) => (
             <button key={step} onClick={() => { stopSpeech(); setCurrentStep(step); }} className={`py-3 px-4 text-[9px] font-black uppercase tracking-widest border-b-4 ${currentStep === step ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-400'}`}>{step === 'practice' ? 'Practice' : step}</button>
           ))}
         </nav>
+      )}
+
+      {isExamStudentView && currentStep === 'practice' && (
+        <div className="bg-orange-50 border-b-2 border-orange-200 py-3 px-6 text-center text-xs font-black text-orange-800 animate-in slide-in-from-top duration-300">
+          📝 【音読実力判定テスト】 Lesson {examLessonId} : Part {examPartNum} を配信中（スコアは自動提出されます）
+        </div>
       )}
 
       <main className="flex-1 p-6 text-center">
@@ -395,8 +493,17 @@ export default function App() {
                 )}
               </form>
 
-              <button onClick={() => { setCurrentStep('menu'); setStudentInfo({ grade: '', classNum: '', attendNum: '', name: '' }); }} className="w-full py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-colors">
-                メインメニューに戻る
+              <button 
+                onClick={() => { 
+                  if (isExamStudentView) {
+                    window.location.search = ""; 
+                  } else {
+                    setCurrentStep('menu'); setStudentInfo({ grade: '', classNum: '', attendNum: '', name: '' }); 
+                  }
+                }} 
+                className="w-full py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-colors"
+              >
+                {isExamStudentView ? 'テストポータルを閉じる' : 'メインメニューに戻る'}
               </button>
             </div>
           )}
