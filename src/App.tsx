@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Play, CheckCircle, BookOpen, Volume2, Square, Mic, Headphones, ChevronDown, X, Share, Send, Loader2, Link, ClipboardCheck } from 'lucide-react';
+import { Home, Play, CheckCircle, BookOpen, Volume2, Square, Mic, Headphones, ChevronDown, X, Share, Send, Loader2, Link, ClipboardCheck, Trash2 } from 'lucide-react';
 import { ListeningStep } from './components/ListeningStep';
 import { QuizStep } from './components/QuizStep';
 import { VocabularyStep } from './components/VocabularyStep';
@@ -178,7 +178,6 @@ export default function App() {
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  // 🔗 ✨ 最初は完全に空欄（""）でスタートし、先生が入力したらブラウザに記憶されるように修正しました
   const [formBaseUrl, setFormBaseUrl] = useState<string>(() => localStorage.getItem('flex_teacher_form_id') || '');
   
   const [isExamStudentView, setIsExamStudentView] = useState<boolean>(false);
@@ -249,6 +248,12 @@ export default function App() {
     alert(`🔗 Lesson ${lessonNum} Part ${partNum} の「テスト専用配布用URL」をコピーしました！これを生徒に配ってください。`);
   };
 
+  // ✨ ブラウザに記憶された古いIDをボタン一発で完全に抹消する処理
+  const handleClearFormStorage = () => {
+    setFormBaseUrl('');
+    localStorage.removeItem('flex_teacher_form_id');
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentInfo.grade || !studentInfo.classNum || !studentInfo.attendNum || !studentInfo.name) {
@@ -308,14 +313,27 @@ export default function App() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-black text-slate-400 block uppercase tracking-wider">作成した独自のGoogleフォームURL、またはフォームID</label>
-            <input 
-              type="text" 
-              value={formBaseUrl} 
-              onChange={(e) => setFormBaseUrl(e.target.value)} 
-              placeholder="ここにGoogleフォームのリンク、またはIDを入力してください" 
-              className="w-full bg-slate-50 text-xs p-3 rounded-xl border-2 border-slate-100 font-mono shadow-inner outline-none focus:border-orange-400 transition-colors" 
-            />
+            <label className="text-[11px] font-black text-slate-400 block mb-1 uppercase tracking-wider">作成した独自のGoogleフォームURL、またはフォームID</label>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                value={formBaseUrl} 
+                onChange={(e) => setFormBaseUrl(e.target.value)} 
+                placeholder="ここにGoogleフォームのリンク、またはIDを入力してください" 
+                className="flex-1 bg-slate-50 text-xs p-3 rounded-xl border-2 border-slate-100 font-mono shadow-inner outline-none focus:border-orange-400 transition-colors" 
+              />
+              {/* ✨ 記憶された過去の文字を一発でクリアするゴミ箱ボタンを設置しました */}
+              {formBaseUrl && (
+                <button 
+                  type="button" 
+                  onClick={handleClearFormStorage} 
+                  title="入力欄を完全に空にする"
+                  className="px-3 bg-rose-50 border-2 border-rose-100 text-rose-500 rounded-xl hover:bg-rose-100 active:scale-95 transition-all flex items-center justify-center"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="pt-2 border-t border-dashed border-slate-200">
