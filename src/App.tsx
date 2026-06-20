@@ -69,7 +69,7 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
       u.lang = 'en-US';
       u.rate = rate;
 
-      // ✨ 発音された瞬間の文字位置（charIndex）をリアルタイムにキャッチ！
+      // 発音された瞬間の文字位置（charIndex）をリアルタイムにキャッチ！
       u.onboundary = (event) => {
         if (event.name === 'word') {
           setHighlightIndex(event.charIndex);
@@ -124,7 +124,6 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
     );
   };
 
-
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500 font-pop">
       <div className="text-center space-y-2">
@@ -158,7 +157,6 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
     </div>
   );
 };
-
 
 // --- インライン・シャドーイング ---
 const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
@@ -224,14 +222,12 @@ export default function App() {
     }
     setIsSending(true);
 
-    // GoogleフォームのベースURL
     const formId = "1FAIpQLSc-VFKZhqhx3q-lpkclvNEoKf2VxZb3leSkIJOnQ6r0iTBirg"; 
     const formUrl = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
     
     // エピソードIDからPart番号(1〜3)を自動計算
     const partNum = ((selectedEpisode.id - 1) % 3) + 1;
 
-    // 解析されたエントリIDの完全マッピング
     const formData = new FormData();
     formData.append('entry.1623079129', studentInfo.grade);
     formData.append('entry.1605514074', studentInfo.classNum);
@@ -255,6 +251,7 @@ export default function App() {
   const handleStart = (ep: Episode) => { stopSpeech(); setSelectedEpisode(ep); setCurrentStep('listening'); };
 
   const renderMainMenu = () => {
+    // 1Lesson3Part制に基づいてフィルタリングの開始IDを設定
     const startId = (selectedLesson - 1) * 3 + 1;
     const filteredEpisodes = courseData.episodes.filter((ep) => ep.id >= startId && ep.id <= startId + 2);
     return (
@@ -264,10 +261,12 @@ export default function App() {
           <div className="mt-8 flex flex-col items-center gap-2 relative z-10 px-6">
             <label className="text-xs font-black text-orange-400 uppercase tracking-widest">Select Your Lesson</label>
             <div className="relative w-full max-w-xs">
+              {/* ✨ Lesson 4 をドロップダウンメニューに追加 */}
               <select value={selectedLesson} onChange={(e) => setSelectedLesson(Number(e.target.value))} className="w-full p-4 bg-white border-4 border-orange-100 rounded-3xl font-black text-slate-700 appearance-none focus:border-orange-400 outline-none shadow-lg cursor-pointer">
                 <option value={1}>Lesson 1: Matsuoka Shuzo</option>
                 <option value={2}>Lesson 2: The Jar of Life</option>
                 <option value={3}>Lesson 3: A Future Energy Crisis</option>
+                <option value={4}>Lesson 4: Mary Anning</option>
               </select>
               <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-orange-400 pointer-events-none" size={24} />
             </div>
