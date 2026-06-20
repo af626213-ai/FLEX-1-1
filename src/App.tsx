@@ -10,8 +10,18 @@ import { ReadingPractice } from './components/ReadingPractice';
 import { courseData } from './data/episodes';
 import type { Episode, KeyPhrase } from './data/episodes';
 
+// ✨ iPad(iOS)のSpeechSynthesisフリーズバグを完全に回避する安全な停止関数
 const stopSpeech = () => {
-  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if ('speechSynthesis' in window) {
+    try {
+      // 再生中(speaking)または、再生待ちキュー(pending)がある場合のみ安全にキャンセルを叩く
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+      }
+    } catch (e) {
+      console.error("Speech cancellation skipped:", e);
+    }
+  }
 };
 
 // --- ホーム画面追加を促すポップアップ ---
@@ -55,7 +65,6 @@ const PWAInstallPrompt = () => {
 // --- インライン・オーバーラッピング（音声イベント完全同期版） ---
 const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  // 現在音声が読み上げている文字の位置（インデックス）を保持
   const [highlightIndex, setHighlightIndex] = useState(0);
 
   const handlePlay = () => {
@@ -69,7 +78,6 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
       u.lang = 'en-US';
       u.rate = rate;
 
-      // 発音された瞬間の文字位置（charIndex）をリアルタイムにキャッチ！
       u.onboundary = (event) => {
         if (event.name === 'word') {
           setHighlightIndex(event.charIndex);
@@ -96,17 +104,14 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
     };
   }, []);
 
-  // スクリプトを「これから読む単語の末尾」で綺麗に切り分ける
   const renderHighlightedScript = () => {
     if (!isPlaying || highlightIndex === 0) {
       return <span className="text-slate-800">{script}</span>;
     }
 
-    // 発音される単語の先頭（highlightIndex）以降で、最初のスペース（単語の区切り）を探す
     const remainingText = script.substring(highlightIndex);
     const nextSpaceIndex = remainingText.search(/\s/);
     
-    // 発音中の単語の「末尾」の位置を計算（文末などでスペースがない場合は全文）
     const breakPoint = nextSpaceIndex !== -1 
       ? highlightIndex + nextSpaceIndex 
       : script.length;
@@ -116,9 +121,7 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
 
     return (
       <>
-        {/* 発音される直前の単語までを、先回りして綺麗な青色に変化 */}
         <span className="text-sky-600 transition-colors duration-700">{spoken}</span>
-        {/* まだ読まれない先の単語は黒色のまま */}
         <span className="text-slate-800">{remaining}</span>
       </>
     );
@@ -142,7 +145,6 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
           {isPlaying ? <Square size={24} /> : <Volume2 size={24} />}
         </button>
 
-        {/* 1行ごとのズレも文ごとのズレも完全にゼロになるテキストエリア */}
         <p className="text-2xl font-bold text-left leading-relaxed pr-20 whitespace-pre-wrap">
           {renderHighlightedScript()}
         </p>
@@ -209,7 +211,6 @@ export default function App() {
     }
   }, [currentStep]);
 
-  // 全角数字を半角に変換、数字以外を除去
   const sanitizeNumber = (val: string) => {
     const halfWidth = val.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
     return halfWidth.replace(/[^0-9]/g, '');
@@ -225,7 +226,6 @@ export default function App() {
     const formId = "1FAIpQLSc-VFKZhqhx3q-lpkclvNEoKf2VxZb3leSkIJOnQ6r0iTBirg"; 
     const formUrl = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
     
-    // エピソードIDからPart番号(1〜3)を自動計算
     const partNum = ((selectedEpisode.id - 1) % 3) + 1;
 
     const formData = new FormData();
@@ -235,8 +235,8 @@ export default function App() {
     formData.append('entry.522541386', studentInfo.name);
     formData.append('entry.2065434801', finalScores.acc.toString());
     formData.append('entry.1759461570', finalScores.wpm.toString());
-    formData.append('entry.738533923', selectedLesson.toString()); // Lesson自動送信
-    formData.append('entry.773089114', partNum.toString());        // Part自動送信
+    formData.append('entry.738533923', selectedLesson.toString());
+    formData.append('entry.773089114', partNum.toString());
 
     try {
       await fetch(formUrl, { method: 'POST', body: formData, mode: 'no-cors' });
@@ -251,7 +251,6 @@ export default function App() {
   const handleStart = (ep: Episode) => { stopSpeech(); setSelectedEpisode(ep); setCurrentStep('listening'); };
 
   const renderMainMenu = () => {
-    // 1Lesson3Part制に基づいてフィルタリングの開始IDを設定
     const startId = (selectedLesson - 1) * 3 + 1;
     const filteredEpisodes = courseData.episodes.filter((ep) => ep.id >= startId && ep.id <= startId + 2);
     return (
@@ -261,7 +260,6 @@ export default function App() {
           <div className="mt-8 flex flex-col items-center gap-2 relative z-10 px-6">
             <label className="text-xs font-black text-orange-400 uppercase tracking-widest">Select Your Lesson</label>
             <div className="relative w-full max-w-xs">
-              {/* ✨ Lesson 4 をドロップダウンメニューに追加 */}
               <select value={selectedLesson} onChange={(e) => setSelectedLesson(Number(e.target.value))} className="w-full p-4 bg-white border-4 border-orange-100 rounded-3xl font-black text-slate-700 appearance-none focus:border-orange-400 outline-none shadow-lg cursor-pointer">
                 <option value={1}>Lesson 1: Matsuoka Shuzo</option>
                 <option value={2}>Lesson 2: The Jar of Life</option>
