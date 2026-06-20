@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Home, Play, CheckCircle, BookOpen, Volume2, Square, Mic, Headphones, ChevronDown, X, Share, Send, Loader2, Link, ClipboardCheck, Trash2 } from 'lucide-react';
+import { Home, Play, CheckCircle, BookOpen, Volume2, Square, Mic, Headphones, ChevronDown, ChevronUp, X, Share, Send, Loader2, Link, ClipboardCheck, Trash2, Settings } from 'lucide-react';
 import { ListeningStep } from './components/ListeningStep';
 import { QuizStep } from './components/QuizStep';
 import { VocabularyStep } from './components/VocabularyStep';
@@ -60,7 +60,7 @@ const PWAInstallPrompt = () => {
   );
 };
 
-// --- インライン・オーバーラッピング（音声イベント完全同期版） ---
+// --- インライン・オーバーラッピング（音声イベント完全同期・単語先読み版） ---
 const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -76,6 +76,7 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
       u.lang = 'en-US';
       u.rate = rate;
 
+      // 発音された瞬間の文字位置を正確にリアルタイムキャッチ
       u.onboundary = (event) => {
         if (event.name === 'word') {
           setHighlightIndex(event.charIndex);
@@ -109,6 +110,7 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
 
     return (
       <>
+        {/* 発音と同時に（一瞬先回りして）単語が丸ごと綺麗に染まる決定版ロジック */}
         <span className="text-sky-600 transition-colors duration-700">{spoken}</span>
         <span className="text-slate-800">{remaining}</span>
       </>
@@ -141,7 +143,7 @@ const OverlappingInternal = ({ script, rate, onNext }: { script: string, rate: n
 
 // --- インライン・シャドーイング ---
 const ShadowingInternal = ({ script, rate, onNext }: { script: string, rate: number, onNext: () => void }) => {
-  const [isPlaying, useState] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const handlePlay = () => {
     if (isPlaying) { stopSpeech(); setIsPlaying(false); }
     else {
@@ -178,6 +180,9 @@ export default function App() {
 
   const [formBaseUrl, setFormBaseUrl] = useState<string>(() => localStorage.getItem('flex_teacher_form_id') || '');
   
+  // ⚙️ 先生用コントロールパネルの開閉状態を管理するステート（初期値は折りたたみ閉じた状態）
+  const [isTeacherMenuOpen, setIsTeacherMenuOpen] = useState<boolean>(false);
+
   const [isExamStudentView, setIsExamStudentView] = useState<boolean>(false);
   const [examLessonId, setExamLessonId] = useState<number>(1);
   const [examPartNum, setExamPartNum] = useState<number>(1);
@@ -187,7 +192,6 @@ export default function App() {
     const style = document.createElement('style'); style.textContent = `.font-pop { font-family: 'Kiwi Maru', sans-serif !important; } body { background-color: #f8fafc; }`; document.head.appendChild(style);
   }, []);
 
-  // 🔗 URLパラメーター読み込み（生徒配布用リンク時の自動フック）
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const examLesson = params.get('examLesson');
@@ -258,49 +262,7 @@ export default function App() {
     return (
       <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
         
-        {/* 🛠️ 先生用：成績回収フォーム設定＆テスト配布用コントロールパネル */}
-        <div className="bg-white border-2 border-orange-200 rounded-[32px] p-6 shadow-md text-left space-y-4 max-w-xl mx-auto">
-          <div className="text-sm font-black text-orange-700 border-b pb-2 flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5 text-orange-500" />
-            <span>🛠️ 先生用：音読テスト配布コントロールパネル</span>
-          </div>
-          
-          <div className="space-y-1">
-            <button type="button" onClick={handleCopyFormTemplateScript} className="w-full py-2.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold text-xs rounded-xl flex items-center justify-center text-center transition-colors cursor-pointer">
-              📋 新しい回収フォームのテンプレートを自分のドライブにコピーする
-            </button>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[11px] font-black text-slate-400 block mb-1 uppercase tracking-wider">作成した独自のGoogleフォームURL、またはフォームID</label>
-            <div className="flex gap-2">
-              <input 
-                type="text" 
-                value={formBaseUrl} 
-                onChange={(e) => setFormBaseUrl(e.target.value)} 
-                placeholder="ここにGoogleフォームのリンク、またはIDを入力してください" 
-                className="flex-1 bg-slate-50 text-xs p-3 rounded-xl border-2 border-slate-100 font-mono shadow-inner outline-none focus:border-orange-400 transition-colors" 
-              />
-              {formBaseUrl && (
-                <button 
-                  type="button" 
-                  onClick={handleClearFormStorage} 
-                  title="入力欄を完全に空にする"
-                  className="px-3 bg-rose-50 border-2 border-rose-100 text-rose-500 rounded-xl hover:bg-rose-100 active:scale-95 transition-all flex items-center justify-center"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-dashed border-slate-200">
-            <p className="text-[11px] font-bold text-slate-500 leading-snug mb-2">
-              💡 下のレッスン一覧の各カードから、特定のパートを指定して生徒へ配布する「テスト専用URL」をいつでも即座にコピーできます。
-            </p>
-          </div>
-        </div>
-
+        {/* タイトル＆レッスン選択 */}
         <div className="text-center py-12 bg-gradient-to-b from-orange-50 to-white rounded-[60px] border-4 border-orange-100 shadow-inner relative overflow-hidden">
           <h2 className="text-5xl md:text-6xl font-black text-orange-700 leading-none tracking-tighter relative z-10">English<br /><span className="text-orange-500">Navigator</span></h2>
           <div className="mt-8 flex flex-col items-center gap-2 relative z-10 px-6">
@@ -317,6 +279,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* パート一覧カード */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {filteredEpisodes.map((ep, idx) => (
             <div key={ep.id} className="group bg-white rounded-[32px] p-8 border-4 border-slate-100 shadow-sm relative overflow-hidden flex flex-col items-center text-center gap-4 hover:shadow-md transition-all">
@@ -336,6 +299,63 @@ export default function App() {
             </div>
           ))}
         </div>
+
+        {/* 🛠️ 【移動＆畳み込み化】先生用コントロールパネル（メインメニューの最下部に配置） */}
+        <div className="pt-6 border-t-2 border-slate-100 max-w-xl mx-auto w-full">
+          <div className="bg-white border-2 border-slate-200 rounded-[24px] overflow-hidden shadow-sm transition-all duration-300">
+            {/* ヘッダー/開閉トリガーボタン */}
+            <button 
+              type="button" 
+              onClick={() => setIsTeacherMenuOpen(!isTeacherMenuOpen)}
+              className="w-full p-4 flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors text-left"
+            >
+              <div className="text-xs font-black text-slate-500 flex items-center gap-2">
+                <Settings className={`w-4 h-4 text-slate-400 ${isTeacherMenuOpen ? 'animate-spin duration-1000' : ''}`} />
+                <span>🛠️ 先生用メニュー（テスト配布設定）</span>
+              </div>
+              {isTeacherMenuOpen ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+            </button>
+
+            {/* 開閉するコンテンツエリア */}
+            {isTeacherMenuOpen && (
+              <div className="p-5 border-t border-slate-100 text-left space-y-4 bg-white animate-in slide-in-from-top-4 duration-200">
+                <div className="space-y-1">
+                  <button type="button" onClick={handleCopyFormTemplateScript} className="w-full py-2.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold text-xs rounded-xl flex items-center justify-center text-center transition-colors cursor-pointer">
+                    📋 回収フォームのテンプレートを自分のドライブにコピーする
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-400 block mb-1 uppercase tracking-wider">作成した独自のGoogleフォームURL、またはフォームID</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={formBaseUrl} 
+                      onChange={(e) => setFormBaseUrl(e.target.value)} 
+                      placeholder="ここにGoogleフォームのリンク、またはIDを入力してください" 
+                      className="flex-1 bg-slate-50 text-xs p-3 rounded-xl border-2 border-slate-100 font-mono shadow-inner outline-none focus:border-orange-400 transition-colors" 
+                    />
+                    {formBaseUrl && (
+                      <button 
+                        type="button" 
+                        onClick={handleClearFormStorage} 
+                        title="入力欄を完全に空にする"
+                        className="px-3 bg-rose-50 border-2 border-rose-100 text-rose-500 rounded-xl hover:bg-rose-100 active:scale-95 transition-all flex items-center justify-center"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-[10px] font-bold text-slate-400 leading-snug pt-1">
+                  💡 上の各パートカードにある「配布用テストURLをコピー」を押すと、ここで入力したフォームIDが自動的に埋め込まれた生徒用URLが生成されます。
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     );
   };
@@ -402,7 +422,6 @@ export default function App() {
                 <div><p className="text-xs text-slate-400 font-bold uppercase">WPM</p><p className="text-3xl font-black text-rose-500">{finalScores.wpm}</p></div>
               </div>
 
-              {/* ✨ ボタンのテキストを「結果表示 (GO NEXT)」から「メインメニューに戻る」に変更しました */}
               <button 
                 onClick={() => { 
                   if (isExamStudentView) {
