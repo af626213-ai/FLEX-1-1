@@ -174,10 +174,6 @@ export default function App() {
   const [speechRate, setSpeechRate] = useState<number>(1.0);
   const [finalScores, setFinalScores] = useState({ acc: 0, wpm: 0 });
 
-  const [studentInfo, setStudentInfo] = useState({ grade: '', classNum: '', attendNum: '', name: '' });
-  const [isSending, setIsSending] = useState(false);
-  const [isSent, setIsSent] = useState(false);
-
   const [formBaseUrl, setFormBaseUrl] = useState<string>(() => localStorage.getItem('flex_teacher_form_id') || '');
   
   const [isExamStudentView, setIsExamStudentView] = useState<boolean>(false);
@@ -219,14 +215,8 @@ export default function App() {
   useEffect(() => {
     if (currentStep === 'result') {
       const finishAudio = new Audio('/finish.mp3'); finishAudio.volume = 0.5; finishAudio.play().catch(() => {});
-      setIsSent(false);
     }
   }, [currentStep]);
-
-  const sanitizeNumber = (val: string) => {
-    const halfWidth = val.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
-    return halfWidth.replace(/[^0-9]/g, '');
-  };
 
   const handleCopyFormTemplateScript = () => {
     const targetUrl = "https://docs.google.com/forms/d/1ROGNVF3VpWXUHmuPYrp3tMI8XE4F3C54SE7YkTOESQw/copy";
@@ -248,47 +238,9 @@ export default function App() {
     alert(`🔗 Lesson ${lessonNum} Part ${partNum} の「テスト専用配布用URL」をコピーしました！これを生徒に配ってください。`);
   };
 
-  // ✨ ブラウザに記憶された古いIDをボタン一発で完全に抹消する処理
   const handleClearFormStorage = () => {
     setFormBaseUrl('');
     localStorage.removeItem('flex_teacher_form_id');
-  };
-
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!studentInfo.grade || !studentInfo.classNum || !studentInfo.attendNum || !studentInfo.name) {
-      alert('すべての項目を入力してください。'); return;
-    }
-    setIsSending(true);
-
-    let cleanFormId = formBaseUrl.trim();
-    if (cleanFormId.includes("forms/d/")) {
-      const matches = cleanFormId.match(/forms\/d\/e\/([^/]+)/) || cleanFormId.match(/forms\/d\/([^/]+)/);
-      if (matches && matches[1]) cleanFormId = matches[1];
-    }
-
-    const formUrl = `https://docs.google.com/forms/d/e/${cleanFormId}/formResponse`;
-    const lesNum = isExamStudentView ? examLessonId : selectedLesson;
-    const partNum = isExamStudentView ? examPartNum : ((selectedEpisode.id - 1) % 3) + 1;
-
-    const formData = new FormData();
-    formData.append('entry.1623079129', studentInfo.grade);
-    formData.append('entry.1605514074', studentInfo.classNum);
-    formData.append('entry.1194830885', studentInfo.attendNum);
-    formData.append('entry.522541386', studentInfo.name);
-    formData.append('entry.2065434801', finalScores.acc.toString());
-    formData.append('entry.1759461570', finalScores.wpm.toString());
-    formData.append('entry.738533923', lesNum.toString()); 
-    formData.append('entry.773089114', partNum.toString());        
-
-    try {
-      await fetch(formUrl, { method: 'POST', body: formData, mode: 'no-cors' });
-      setIsSent(true);
-    } catch (error) {
-      alert('送信に失敗しました。Wi-Fi環境を確認してください。');
-    } finally {
-      setIsSending(false);
-    }
   };
 
   const handleStart = (ep: Episode) => { stopSpeech(); setSelectedEpisode(ep); setCurrentStep('listening'); };
@@ -322,8 +274,7 @@ export default function App() {
                 placeholder="ここにGoogleフォームのリンク、またはIDを入力してください" 
                 className="flex-1 bg-slate-50 text-xs p-3 rounded-xl border-2 border-slate-100 font-mono shadow-inner outline-none focus:border-orange-400 transition-colors" 
               />
-              {/* ✨ 記憶された過去の文字を一発でクリアするゴミ箱ボタンを設置しました */}
-              {formBaseUrl && (
+              if (formBaseUrl) {
                 <button 
                   type="button" 
                   onClick={handleClearFormStorage} 
@@ -332,7 +283,7 @@ export default function App() {
                 >
                   <Trash2 size={16} />
                 </button>
-              )}
+              }
             </div>
           </div>
 
@@ -418,7 +369,7 @@ export default function App() {
 
       {isExamStudentView && currentStep === 'practice' && (
         <div className="bg-orange-50 border-b-2 border-orange-200 py-3 px-6 text-center text-xs font-black text-orange-800 animate-in slide-in-from-top duration-300">
-          📝 【音読実力判定テスト】 Lesson {examLessonId} : Part {examPartNum} を配信中（スコアは自動提出されます）
+          📝 【音読実力判定テスト】 Lesson {examLessonId} : Part {examPartNum} を配信中
         </div>
       )}
 
@@ -444,82 +395,18 @@ export default function App() {
                 <div><p className="text-xs text-slate-400 font-bold uppercase">WPM</p><p className="text-3xl font-black text-rose-500">{finalScores.wpm}</p></div>
               </div>
 
-              <form onSubmit={handleFormSubmit} className="bg-white p-6 rounded-[32px] shadow-lg border-2 border-orange-100 text-left space-y-4">
-                <p className="text-xs font-black text-orange-500 uppercase tracking-widest text-center mb-2">生徒情報を入力してスコアを提出</p>
-                
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 block mb-1">学年</label>
-                    <input 
-                      type="text" 
-                      inputMode="numeric" 
-                      pattern="[0-9]*"
-                      placeholder="1" 
-                      required 
-                      disabled={isSent} 
-                      value={studentInfo.grade} 
-                      onChange={e => setStudentInfo({...studentInfo, grade: sanitizeNumber(e.target.value)})} 
-                      className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl font-black text-slate-700 text-center focus:border-orange-400 outline-none disabled:opacity-50" 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 block mb-1">組</label>
-                    <input 
-                      type="text" 
-                      inputMode="numeric" 
-                      pattern="[0-9]*"
-                      placeholder="3" 
-                      required 
-                      disabled={isSent} 
-                      value={studentInfo.classNum} 
-                      onChange={e => setStudentInfo({...studentInfo, classNum: sanitizeNumber(e.target.value)})} 
-                      className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl font-black text-slate-700 text-center focus:border-orange-400 outline-none disabled:opacity-50" 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 block mb-1">出席番号</label>
-                    <input 
-                      type="text" 
-                      inputMode="numeric" 
-                      pattern="[0-9]*"
-                      placeholder="14" 
-                      required 
-                      disabled={isSent} 
-                      value={studentInfo.attendNum} 
-                      onChange={e => setStudentInfo({...studentInfo, attendNum: sanitizeNumber(e.target.value)})} 
-                      className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl font-black text-slate-700 text-center focus:border-orange-400 outline-none disabled:opacity-50" 
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 block mb-1">氏名</label>
-                  <input type="text" placeholder="英語 太郎" required disabled={isSent} value={studentInfo.name} onChange={e => setStudentInfo({...studentInfo, name: e.target.value})} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl font-black text-slate-700 focus:border-orange-400 outline-none disabled:opacity-50" />
-                </div>
-
-                {isSent ? (
-                  <div className="w-full py-4 bg-emerald-500 text-white font-black rounded-2xl shadow-md text-center animate-in fade-in duration-300">
-                    提出完了！スプレッドシートに保存されました
-                  </div>
-                ) : (
-                  <button type="submit" disabled={isSending} className="w-full py-4 bg-orange-500 text-white font-black rounded-2xl shadow-lg border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 hover:bg-orange-600 disabled:opacity-50">
-                    {isSending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-                    {isSending ? '送信中...' : '成績提出 (SUBMIT)'}
-                  </button>
-                )}
-              </form>
-
+              {/* ✨ 学年等の不要な入力フォーム枠を完全に削除し、次の画面に進むだけのシンプルで綺麗なボタンに統合しました */}
               <button 
                 onClick={() => { 
                   if (isExamStudentView) {
                     window.location.search = ""; 
                   } else {
-                    setCurrentStep('menu'); setStudentInfo({ grade: '', classNum: '', attendNum: '', name: '' }); 
+                    setCurrentStep('menu');
                   }
                 }} 
-                className="w-full py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-colors"
+                className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl shadow-lg border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2"
               >
-                {isExamStudentView ? 'テストポータルを閉じる' : 'メインメニューに戻る'}
+                結果表示 (GO NEXT)
               </button>
             </div>
           )}
