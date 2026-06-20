@@ -178,10 +178,9 @@ export default function App() {
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  // 🔗 先生用：各先生独自の回収GoogleフォームのベースIDを記憶（デフォルトは深澤先生のID）
-  const [formBaseUrl, setFormBaseUrl] = useState<string>(() => localStorage.getItem('flex_teacher_form_id') || '1FAIpQLSc-VFKZhqhx3q-lpkclvNEoKf2VxZb3leSkIJOnQ6r0iTBirg');
+  // 🔗 ✨ 最初は完全に空欄（""）でスタートし、先生が入力したらブラウザに記憶されるように修正しました
+  const [formBaseUrl, setFormBaseUrl] = useState<string>(() => localStorage.getItem('flex_teacher_form_id') || '');
   
-  // 🎓 生徒用：配布用URL（パラメーター）経由で入ってきたかどうかの判定フラグ
   const [isExamStudentView, setIsExamStudentView] = useState<boolean>(false);
   const [examLessonId, setExamLessonId] = useState<number>(1);
   const [examPartNum, setExamPartNum] = useState<number>(1);
@@ -230,7 +229,6 @@ export default function App() {
     return halfWidth.replace(/[^0-9]/g, '');
   };
 
-  // 📋 ✨ お送りいただいた音読回収専用フォームのテンプレート自動複製処理
   const handleCopyFormTemplateScript = () => {
     const targetUrl = "https://docs.google.com/forms/d/1ROGNVF3VpWXUHmuPYrp3tMI8XE4F3C54SE7YkTOESQw/copy";
     window.open(targetUrl, '_blank');
@@ -315,7 +313,7 @@ export default function App() {
               type="text" 
               value={formBaseUrl} 
               onChange={(e) => setFormBaseUrl(e.target.value)} 
-              placeholder="https://docs.google.com/forms/d/e/.../viewform" 
+              placeholder="ここにGoogleフォームのリンク、またはIDを入力してください" 
               className="w-full bg-slate-50 text-xs p-3 rounded-xl border-2 border-slate-100 font-mono shadow-inner outline-none focus:border-orange-400 transition-colors" 
             />
           </div>
