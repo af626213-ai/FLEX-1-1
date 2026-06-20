@@ -7,6 +7,10 @@ import { lesson2_3 } from './lesson2-3';
 import { lesson3_1 } from './lesson3-1';
 import { lesson3_2 } from './lesson3-2';
 import { lesson3_3 } from './lesson3-3';
+// ✨ ハイフン「-」を使ったファイル名ルールでLesson 4をインポート
+import { lesson4_1 } from './lesson4-1';
+import { lesson4_2 } from './lesson4-2';
+import { lesson4_3 } from './lesson4-3';
 
 import { CourseData } from '../types';
 
@@ -21,7 +25,11 @@ export const courseData: CourseData = {
     lesson2_3,
     lesson3_1,
     lesson3_2,
-    lesson3_3
+    lesson3_3,
+    // ✨ 配列の末尾にLesson 4の各パートを追加
+    lesson4_1,
+    lesson4_2,
+    lesson4_3
   ]
 };
 
